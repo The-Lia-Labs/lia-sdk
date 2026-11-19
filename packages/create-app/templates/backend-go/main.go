@@ -55,6 +55,10 @@ func main() {
 			reply(w, 200, map[string]bool{"received": true, "probe": true})
 			return
 		}
+		if event.Type != "charge.paid" && event.Type != "charge.refunded" {
+			reply(w, 200, map[string]bool{"received": true})
+			return
+		}
 		var data struct {
 			ID string `json:"id"`
 		}
