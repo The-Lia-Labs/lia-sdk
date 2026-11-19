@@ -4,7 +4,9 @@
 npm create @lia-labs/app@latest
 ```
 
-The interactive CLI asks for a directory, framework, starter or SDK demo, public app ID, package manager, local simulation and dependency installation. It supports plain TypeScript, React, Preact, Vue, Svelte, Solid, Angular, web components and the low-level bridge. It never asks for or embeds secret server keys.
+The interactive CLI uses arrow-key menus, inline validation and a guided setup. Choose a directory, framework and starter or SDK playground, then accept **Recommended** settings to preview locally and install with your detected package manager. Choose **Customize** to edit the public app ID, package manager, local simulation and installation preference. Install progress stays compact; failures show the reason and commands to retry. Ctrl+C cancels setup cleanly.
+
+It supports plain TypeScript, React, Preact, Vue, Svelte, Solid, Angular, web components and the low-level bridge. Server keys belong in your backend; setup only accepts a public app ID.
 
 ```sh
 npm create @lia-labs/app@latest my-game -- --framework react --template demo
