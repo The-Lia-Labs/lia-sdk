@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 
+export const TERMINAL_SCOPE = 'apps:read apps:create apps:dev';
 export const DEFAULT_API = 'https://api.lialabs.org';
 const configDir = () => process.env.LIA_CONFIG_DIR || path.join(process.env.XDG_CONFIG_HOME || path.join(homedir(), '.config'), 'lia');
 const tokenFile = () => path.join(configDir(), 'credentials.json');
@@ -62,7 +63,7 @@ export async function openBrowser(url) {
   return new Promise(resolve=>{const child=spawn(command,args,{stdio:'ignore',shell:false});const timer=setTimeout(()=>{child.unref();resolve(false);},5000);timer.unref();const done=value=>{clearTimeout(timer);resolve(value);};child.once('error',()=>done(false));child.once('close',code=>done(code===0));});
 }
 export async function login({origin=DEFAULT_API,signal,onDevice=()=>{},onWaiting=()=>{},browser=true}={}) {
-  const device=await cliRequest(origin,'/device',{method:'POST',body:{client_id:'lia-cli',client_name:'Lia CLI on '+({darwin:'macOS',win32:'Windows',linux:'Linux'}[platform()]||platform())},signal});
+  const device=await cliRequest(origin,'/device',{method:'POST',body:{client_id:'lia-cli',scope:TERMINAL_SCOPE,client_name:'Lia CLI on '+({darwin:'macOS',win32:'Windows',linux:'Linux'}[platform()]||platform())},signal});
   if(!/^lia_device_[a-f0-9]{64}$/.test(device.device_code)||!/^\w{4}-\w{4}$/.test(device.user_code)||!Number.isFinite(device.expires_in)||device.expires_in<=0||device.expires_in>600)throw Error('The API returned an invalid sign-in request.');
   const verification=new URL(device.verification_uri_complete);
   const local=['localhost','127.0.0.1'].includes(new URL(origin).hostname);
@@ -80,7 +81,7 @@ export async function login({origin=DEFAULT_API,signal,onDevice=()=>{},onWaiting
     const data=await credentials();
     data[apiOrigin(origin)]={token:result.access_token,expiresAt:Date.now()+result.expires_in*1000,account:result.account};
     await save(data);
-    return result.account;
+    return {...result.account,scope:result.scope};
   }
   throw new LiaAPIError(400,'expired_token');
 }

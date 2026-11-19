@@ -32,10 +32,24 @@ npx @lia-labs/create-app@latest register --name "My game" --kind game
 npx @lia-labs/create-app@latest logout
 ```
 
-Use `--register` during creation to connect immediately, and `--url https://your-app.example` if hosting is ready. Reusing an app ID you own links the project without editing the listing. Registration stores only public metadata in `lia.config.json`. Credentials are private files outside your project, scoped to the API origin, and expire after 30 days. Revoke them from **Connected terminals** in the developer dashboard. Terminal access only lists apps and creates test listings; it cannot publish, read server keys or make payouts. `login --no-browser` prints the approval link without opening it. Browser requests expire in 10 minutes.
+Use `--register` during creation to connect immediately, and `--url https://your-app.example` if hosting is ready. Reusing an app ID you own links the project without editing the listing. Registration stores only public metadata in `lia.config.json`. Credentials are private files outside your project, scoped to the API origin, and expire after 30 days. Revoke them from **Connected terminals** in the developer dashboard. Browser-approved terminal access lists apps, creates test listings, and connects temporary local previews to private test apps. Existing 0.3 grants need a new approval for preview access. Terminals cannot publish, read server keys or make payouts. `login --no-browser` prints the approval link without opening it. Browser requests expire in 10 minutes.
 
 Manage your listing at https://developers.lialabs.org. Test apps appear under **Apps → Testing** for you and your selected testers. Publication requires review. Open developer access is planned for Q1 2027.
 
 Use a supported Node LTS version (Node 22.12+ or 24+ recommended). The CLI pins compatible SDK package versions and framework majors; Preact 10 and Solid 1 match the current Lia bindings. Angular uses its standalone application builder and TypeScript 5.9. The other projects use Vite.
 
 Documentation: https://docs.lialabs.org/packages/starters
+
+
+## Preview live inside Lia
+
+```sh
+cd my-game
+npx @lia-labs/create-app@latest dev
+```
+
+The CLI starts your local dev server, installs a checksum-verified Cloudflare Tunnel helper into your user cache if needed, creates a temporary HTTPS tunnel and connects your private test listing. No Cloudflare account or DNS setup is required. Open the app again in Lia under Apps → Testing. Your framework’s live reload sends subsequent edits into that preview.
+
+Use `--port 4201` to choose a port, or `--pm pnpm` to override the detected package manager. Press **o** to open the app link, **d** for the dashboard, or **q** / Ctrl+C to stop. The live panel shows the local server, HTTPS tunnel, account and connected app. Your permanent page URL is never overwritten. Stopping disconnects the preview; a lost terminal expires its lease within two minutes. Live or paused apps cannot use local previews.
+
+The temporary tunnel URL is public to anyone who has it; the Lia listing remains restricted to its existing developer and testers. Use development data and keep secrets out of browser code. Cloudflare Quick Tunnels are for development, with no uptime guarantee; deploy permanent hosting before submitting an app for review.

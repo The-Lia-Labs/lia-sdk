@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import * as p from '@clack/prompts';
 import { createStudio } from '../src/studio.mjs';
-import { apiOrigin, login, logout, whoami, savedAccount, registerProject, cliRequest } from '../src/account.mjs';
+import { apiOrigin, login, logout, whoami, savedAccount, registerProject, cliRequest, openBrowser } from '../src/account.mjs';
+import { development } from '../src/development.mjs';
+import { emitKeypressEvents } from 'node:readline';
 import { stdin, stdout } from 'node:process';
 import { parseArgs } from 'node:util';
 import path from 'node:path';
@@ -18,8 +20,9 @@ const help = `
 
   npm create @lia-labs/app@latest [directory] [options]
 
-  Commands: login, logout, whoami, register [directory], apps
+  Commands: login, logout, whoami, register [directory], apps, dev [directory]
 
+  --port <port>          Local preview port (dev only)
   --local                Create locally without connecting an account
   --register             Register this project as a private test app
   --url <https-url>      Optional deployed app URL
@@ -68,6 +71,39 @@ async function connect(origin, browser=true) {
 async function ensureAccount(origin,browser) {
   try{return await whoami(origin);}catch(error){if(error.status!==401)throw error;if(!interactive)throw error;return connect(origin,browser);}
 }
+async function runDevelopment({directory,origin,pm,port,browser}) {
+  let account=await ensureAccount(origin,browser);
+  if(!account.scope?.split(' ').includes('apps:dev')) {
+    if(!interactive)throw Error('Run npx @lia-labs/create-app@latest login to approve local preview access.');
+    studio.note(['Local previews need one additional permission.','Confirm the new code in your browser to connect your private test apps.'],'LOCAL PREVIEW ACCESS');
+    await connect(origin,browser);
+  }
+  const controller=new AbortController();let ready=false,links;
+  const stop=()=>controller.abort(Error('Preview stopped'));
+  const key=(_text,pressed)=>{
+    if(pressed?.name==='q'||(pressed?.ctrl&&pressed?.name==='c'))stop();
+    else if(pressed?.name==='o'&&links)void openBrowser(links.appUrl);
+    else if(pressed?.name==='d'&&links)void openBrowser(links.dashboardUrl);
+  };
+  const signals=['SIGINT','SIGTERM','SIGHUP'];for(const signal of signals)process.once(signal,stop);
+  const previousRaw=stdin.isRaw;
+  try {
+    if(interactive){progress=studio.task(stop);progress.start('Preparing your live preview');}
+    await development({directory,origin,pm,port,signal:controller.signal,onStep:message=>{
+      if(interactive&&!ready)progress?.message(message);else stdout.write('  '+message+'\n');
+    },onReady:info=>{
+      ready=true;links=info;
+      if(interactive){progress.stop('Your local app is connected to Lia');studio.livePreview(info);emitKeypressEvents(stdin);stdin.setRawMode(true);stdin.resume();stdin.on('keypress',key);}
+      else stdout.write('Live preview: '+info.publicUrl+'\nLocal: '+info.localUrl+'\nOpen in Lia: '+info.appUrl+'\nPress Ctrl+C to stop.\n');
+    },onOutput:text=>stdout.write(text)});
+  } catch(error) {
+    if(!controller.signal.aborted)throw error;
+    if(interactive&&!ready)progress?.cancel('Preview stopped');
+  } finally {
+    for(const signal of signals)process.removeListener(signal,stop);
+    if(interactive){stdin.removeListener('keypress',key);stdin.setRawMode(Boolean(previousRaw));stdin.pause();}
+  }
+}
 class Cancelled extends Error {}
 async function answer(prompt) {
   const value = await prompt;
@@ -81,11 +117,11 @@ try {
     'app-id': { type: 'string' }, pm: { type: 'string' }, 'no-mock': { type: 'boolean' },
     install: { type: 'boolean' }, 'no-install': { type: 'boolean' }, yes: { type: 'boolean', short: 'y' },
     help: { type: 'boolean', short: 'h' }, version: { type: 'boolean' },
-    local:{type:'boolean'},register:{type:'boolean'},url:{type:'string'},name:{type:'string'},kind:{type:'string'},api:{type:'string'},'no-browser':{type:'boolean'},
+    local:{type:'boolean'},register:{type:'boolean'},url:{type:'string'},name:{type:'string'},kind:{type:'string'},api:{type:'string'},'no-browser':{type:'boolean'},port:{type:'string'},
   } });
   if (values.help) { stdout.write(help); process.exit(0); }
   if (values.version) { stdout.write(version + '\n'); process.exit(0); }
-  const command=['login','logout','whoami','register','apps'].includes(positionals[0])?positionals.shift():'create';
+  const command=['login','logout','whoami','register','apps','dev'].includes(positionals[0])?positionals.shift():'create';
   const origin=apiOrigin(values.api);
   if(values.local&&values.register)throw Error('Choose --local or --register.');
   if(values.kind&&!['app','game','utility'].includes(values.kind))throw Error('Choose --kind app, game or utility.');
@@ -102,12 +138,13 @@ try {
   if(command!=='create') {
     if(command==='login') {
       let account;
-      try {account=await whoami(origin);}catch(error){if(error.status!==401)throw error;account=await connect(origin,!values['no-browser']);}
+      try {account=await whoami(origin);if(!account.scope?.split(' ').includes('apps:dev'))account=await connect(origin,!values['no-browser']);}catch(error){if(error.status!==401)throw error;account=await connect(origin,!values['no-browser']);}
       if(interactive)studio.note(['Signed in as @'+account.username,'Your terminal can create and list your test apps.'],'CONNECTED');
       else stdout.write('Signed in as @'+account.username+'\n');
     } else if(command==='logout') {await logout(origin);stdout.write('Signed out of Lia.\n');}
     else if(command==='whoami') {const account=await whoami(origin);stdout.write('@'+account.username+'\n');}
     else if(command==='apps') {const saved=await savedAccount(origin);if(!saved)throw Error('Run login first.');const data=await cliRequest(origin,'/apps',{token:saved.token});const lines=data.apps.map(app=>app.id+'  ['+app.status+']  '+app.name);if(interactive)studio.note(lines.length?lines:['No apps yet. Run register from your project.'],'YOUR APPS');else stdout.write((lines.join('\n')||'No apps yet.')+'\n');}
+    else if(command==='dev') {await runDevelopment({directory:positionals[0]||'.',origin,pm:values.pm,port:values.port,browser:!values['no-browser']});}
     else {const account=await ensureAccount(origin,!values['no-browser']);const result=await registerProject({directory:positionals[0]||'.',origin,id:values['app-id'],name:values.name,kind:values.kind,url:values.url});if(interactive)studio.launchpad({commands:[],registration:result,account,installed:true});else stdout.write('Registered '+result.appId+'\n'+result.dashboardUrl+'\n');}
   }
   if(command==='create') {
@@ -146,8 +183,8 @@ try {
       if (!values.pm) pm = await answer(studio.select({ message: 'Package manager', initialValue: pm,
         options: packageManagers.map(value => ({ value, label: value, ...(value === pm ? { hint: 'Detected' } : {}) })),
       }));
-      if (!values['no-mock']) mock = await answer(p.confirm({ message: 'Preview Lia features in your browser?', active: 'Yes, use simulated data', inactive: 'No, test inside Lia', initialValue: true }));
-      if (!values.install && !values['no-install']) install = await answer(p.confirm({ message: 'Install dependencies now?', active: 'Yes, get everything ready', inactive: 'I’ll install them later', initialValue: true }));
+      if (!values['no-mock']) mock = await answer(studio.confirm({ message: 'Preview Lia features in your browser?', active: 'Yes, use simulated data', inactive: 'No, test inside Lia', initialValue: true }));
+      if (!values.install && !values['no-install']) install = await answer(studio.confirm({ message: 'Install dependencies now?', active: 'Yes, get everything ready', inactive: 'I’ll install them later', initialValue: true }));
     }
     studio.blueprint({name,framework:frameworks[framework].label,template,pm,mock});
     progress = studio.task();
@@ -186,6 +223,7 @@ try {
     } catch(error) {if(error instanceof Cancelled)throw error;if(interactive){progress?.error('Registration needs another try');p.log.warn(error.message+'\nYour local files are ready. Run npx @lia-labs/create-app register from your project.');}else process.stderr.write(error.message+'\n');process.exitCode=1;}
   }
   const commands = nextCommands(directory, pm, installed);
+  if(registration)commands[commands.length-1]='npx @lia-labs/create-app@latest dev';
   if (interactive) studio.launchpad({commands,registration,account,installed,install});
   else stdout.write(`${registration?'\n'+(registration.alreadyRegistered?'Linked ':'Registered ')+registration.appId+'\n'+registration.dashboardUrl+'\n'+(registration.pendingHosting?'Add your deployed HTTPS URL in the dashboard before testing.\n':''):''}\nNext:\n${commands.map(command => '  ' + command).join('\n')}\n\nDocs: https://docs.lialabs.org/packages/starters\n`);
 

@@ -1,7 +1,7 @@
 {
   "name": "@lia-labs/create-app",
-  "version": "0.3.0",
-  "description": "Create a Lia mini app with interactive framework starters and working SDK demos.",
+  "version": "0.4.0",
+  "description": "Build Lia mini apps with guided setup, browser login and live Cloudflare Tunnel previews.",
   "type": "module",
   "license": "MIT",
   "author": "Lia Labs",
@@ -17,7 +17,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "node --check bin/create-app.mjs && node --check src/scaffold.mjs && node --check src/account.mjs && node --check src/studio.mjs",
+    "build": "node --check bin/create-app.mjs && node --check src/scaffold.mjs && node --check src/account.mjs && node --check src/studio.mjs && node --check src/tunnel.mjs && node --check src/development.mjs",
     "test": "node --test test/*.test.mjs"
   },
   "engines": {

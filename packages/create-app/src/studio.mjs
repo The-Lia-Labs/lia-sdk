@@ -1,4 +1,4 @@
-import { SelectPrompt, TextPrompt } from '@clack/core';
+import { ConfirmPrompt, SelectPrompt, TextPrompt } from '@clack/core';
 import * as prompts from '@clack/prompts';
 import color from 'picocolors';
 import width from 'fast-string-width';
@@ -6,6 +6,7 @@ import { wrapAnsi } from 'fast-wrap-ansi';
 import { stripVTControlCharacters } from 'node:util';
 
 const phases=['Project','Stack','Starter','Setup','Account'];
+const phaseTones=[[117,176,255],[109,222,173],[255,191,121],[188,157,255],[255,156,198]];
 const palette={blue:[91,125,255],cyan:[104,223,235],muted:[130,146,170],edge:[59,79,112],green:[104,218,167],ink:[239,244,255]};
 const tones={react:[109,211,244],vue:[111,221,169],svelte:[255,153,116],preact:[190,156,255],solid:[132,183,255],angular:[255,141,173],vanilla:[133,183,255],elements:[128,224,219],bridge:[215,183,255]};
 const safe = value => stripVTControlCharacters(String(value)).replace(/[\x00-\x1f\x7f]/g,' ');
@@ -36,7 +37,7 @@ export function createStudio({output=process.stdout,env=process.env}={}) {
     return ['  '+t.rgb(tone,top),...body.map(line=>'  '+line),'  '+t.rgb(tone,'╰'+'─'.repeat(size-2)+'╯')].join('\n');
   }
   function stage(index) {
-    const full=phases.map((name,i)=>i===index?t.bold(t.rgb('blue',`${String(i+1).padStart(2,'0')} ${name.toUpperCase()}`)):t.rgb(i<index?'green':'muted',i<index?'✓ '+name:name)).join(t.rgb('edge','  /  '));
+    const full=phases.map((name,i)=>i===index?t.bold(t.rgb(phaseTones[i],`${String(i+1).padStart(2,'0')} ${name.toUpperCase()}`)):t.rgb(i<index?'green':'muted',i<index?'✓ '+name:name)).join(t.rgb('edge','  /  '));
     return '\n  '+(width(full)<=cols()?full:t.rgb('blue',`${String(index+1).padStart(2,'0')} / 05  `)+t.bold(phases[index].toUpperCase()))+'\n';
   }
   const summary=(label,value,cancelled=false)=>'  '+t.rgb(cancelled?'muted':'green',cancelled?'−':'✓')+' '+t.rgb('muted',safe(label))+'  '+t.bold(safe(value))+'\n';
@@ -88,6 +89,21 @@ export function createStudio({output=process.stdout,env=process.env}={}) {
       return stage(step)+'\n  '+t.bold(message)+'\n\n'+frame([line],'','blue')+'\n  '+note+'\n';
     }}).prompt();
   }
+  function confirm({message,active='Yes',inactive='No',initialValue=true,stage:step=3,...opts}) {
+    if(accessible)return prompts.confirm({message,active,inactive,initialValue,...opts});
+    return new ConfirmPrompt({active,inactive,initialValue,...opts,output,render(){
+      if(this.state==='submit'||this.state==='cancel')return summary(message,this.value?active:inactive,this.state==='cancel');
+      const option=(value,label)=> (this.value===value?t.rgb(phaseTones[step],'◆ '):t.rgb('muted','◇ '))+(this.value===value?t.bold(t.rgb(phaseTones[step],label)):t.rgb('muted',label));
+      return stage(step)+'\n  '+t.bold(message)+'\n\n'+frame([option(true,active),option(false,inactive)],'YOUR PREFERENCE',phaseTones[step])+'\n  '+t.rgb('muted','←/→ choose   Enter continue   y/n quick select')+'\n';
+    }}).prompt();
+  }
+  function livePreview({appId,framework,localUrl,publicUrl,appUrl,account}) {
+    const status=(label,tone)=>t.rgb(tone,'● ')+t.bold(label);
+    output.write('\n'+frame([t.bold(appId)+'  '+t.rgb('muted',framework+' · @'+safe(account.username)), '',status('LOCAL SERVER','green'),t.rgb('cyan',localUrl),'',status('CLOUDFLARE TUNNEL',[108,220,239]),t.rgb('cyan',publicUrl),'',status('CONNECTED TO LIA',[191,157,255]),t.rgb('cyan',appUrl)],'LIVE PREVIEW',[145,172,255])+'\n');
+    output.write('  '+t.rgb('green','Changes update live. ')+t.rgb('muted','Reopen this test app in Lia to load the preview.')+'\n');
+    output.write('  '+t.rgb('muted','The temporary URL is public. Your Lia listing stays private.')+'\n\n');
+    output.write('  '+t.bold(t.rgb('cyan','o'))+' open app    '+t.bold(t.rgb([191,157,255],'d'))+' dashboard    '+t.bold(t.rgb([255,183,125],'q'))+' stop preview\n\n');
+  }
   function blueprint({name,framework,template,pm,mock}) {
     const line=(a,b)=>t.rgb('muted',pad(a,13))+t.bold(safe(b));
     output.write('\n'+frame([line('PROJECT',name),line('STACK',framework),line('STARTER',template==='demo'?'SDK playground':'Clean starter'),line('PACKAGE',pm),line('PREVIEW',mock?'Browser simulation':'Inside Lia')],'YOUR BUILD','blue')+'\n');
@@ -100,5 +116,5 @@ export function createStudio({output=process.stdout,env=process.env}={}) {
   }
   function note(lines,title){output.write('\n'+frame(lines.map(safe),title,'blue')+'\n');}
   function task(onCancel) {return prompts.spinner({styleFrame:frame=>t.rgb('blue',frame),frames:env.LIA_NO_MOTION?['•']:['▰▱▱▱▱','▱▰▱▱▱','▱▱▰▱▱','▱▱▱▰▱','▱▱▱▱▰','▱▱▱▰▱','▱▱▰▱▱','▱▰▱▱▱'],delay:env.LIA_NO_MOTION?1000:110,...(onCancel?{onCancel}:{}),cancelMessage:'Stopped'});}
-  return {header,select,text,blueprint,launchpad,note,task,stage,frame,t};
+  return {header,select,text,confirm,livePreview,blueprint,launchpad,note,task,stage,frame,t};
 }
