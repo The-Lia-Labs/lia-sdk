@@ -69,7 +69,7 @@ async function connect(origin, browser=true) {
   } catch(error) {if(controller.signal.aborted)throw new Cancelled();if(interactive)progress?.error('Sign-in did not finish');throw error;}
 }
 async function ensureAccount(origin,browser) {
-  try{return await whoami(origin);}catch(error){if(error.status!==401)throw error;if(!interactive)throw error;return connect(origin,browser);}
+  try{return await whoami(origin,undefined,({delayMs})=>{const message=`Lia is busy. Retrying in ${Math.ceil(delayMs/1000)}s…`;if(interactive)p.log.info(message);else process.stderr.write(message+'\n');});}catch(error){if(error.status!==401)throw error;if(!interactive)throw error;return connect(origin,browser);}
 }
 async function runDevelopment({directory,origin,pm,port,browser}) {
   let account=await ensureAccount(origin,browser);

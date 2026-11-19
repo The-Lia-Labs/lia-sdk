@@ -1,0 +1,7 @@
+simulation: cli-overload
+routing: path
+mocks:
+  - name: Lia terminal API
+    routeKey: api
+    origin: api.lialabs.org
+    path: postman/mocks/lia-cli-overload

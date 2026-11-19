@@ -62,9 +62,10 @@ export async function development({directory='.',origin,pm,port:requestedPort,si
   const config=JSON.parse(await readFile(path.join(directory,'lia.config.json'),'utf8').catch(()=>{throw Error('Run dev inside a generated Lia project, or pass its directory.');}));
   if(!Object.hasOwn(frameworks,config.framework)||typeof config.appId!=='string'||!/^[a-z0-9][a-z0-9-]{1,39}$/.test(config.appId))throw Error('This project has an invalid Lia configuration.');
   const saved=await savedAccount(origin);if(!saved)throw Error('Sign in with npx @lia-labs/create-app@latest login first.');
-  const account=await cliRequest(origin,'/me',{token:saved.token,signal});
+  const onRetry=({delayMs})=>onStep(`Lia is busy · retrying in ${Math.ceil(delayMs/1000)}s`);
+  const account=await cliRequest(origin,'/me',{token:saved.token,signal,onRetry});
   if(!account.scope?.split(' ').includes('apps:dev'))throw Error('Approve local preview access with the latest Lia CLI login.');
-  const {apps}=await cliRequest(origin,'/apps',{token:saved.token,signal});
+  const {apps}=await cliRequest(origin,'/apps',{token:saved.token,signal,onRetry});
   const app=apps.find(app=>app.id===config.appId);
   if(!app)throw Error('Register this project before running dev: npx @lia-labs/create-app@latest register');
   if(app.status!=='test')throw Error('Local previews are only available for private test apps.');
@@ -84,10 +85,10 @@ export async function development({directory='.',origin,pm,port:requestedPort,si
     await waitForPage(localUrl,{signal:combined,server});
     onStep('Cloudflare Tunnel connected');
     onStep('Connecting your private Lia listing');
-    const preview=await cliRequest(origin,route,{method:'PUT',token:saved.token,body:{url:tunnel.url,leaseId},signal:combined});connected=true;
+    const preview=await cliRequest(origin,route,{method:'PUT',token:saved.token,body:{url:tunnel.url,leaseId},signal:combined,onRetry});connected=true;
     const beat=async()=>{
       if(stopping||heartbeating)return;heartbeating=true;
-      try{await cliRequest(origin,route,{method:'PATCH',token:saved.token,body:{leaseId},signal:combined});}
+      try{await cliRequest(origin,route,{method:'PATCH',token:saved.token,body:{leaseId},signal:combined,onRetry});}
       catch(error){if(!stopping)failed.abort(Error('The preview disconnected: '+error.message));}
       finally{heartbeating=false;}
     };

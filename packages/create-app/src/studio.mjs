@@ -111,7 +111,7 @@ export function createStudio({output=process.stdout,env=process.env}={}) {
   function launchpad({commands,registration,account,installed,install}) {
     const title=install&&!installed?'PROJECT SAVED':'READY TO BUILD';
     output.write('\n'+frame([t.bold(t.rgb('green',install&&!installed?'One more step: install your packages.':'Your next app starts here.')),'',...commands.map(command=>t.rgb('muted','$ ')+t.rgb('cyan',command))],' '+title+' ','blue')+'\n');
-    if(registration)output.write('  '+t.rgb('green','✓')+' '+t.bold('Registered in Lia')+(account?'  '+t.rgb('muted','@'+safe(account.username)):'')+'\n  '+t.rgb('cyan',registration.dashboardUrl)+'\n'+(registration.pendingHosting?'  '+t.rgb('muted','Add your HTTPS URL before testing in Lia.')+'\n':''));
+    if(registration)output.write('  '+t.rgb('green','✓')+' '+t.bold('Registered in Lia')+(account?'  '+t.rgb('muted','@'+safe(account.username)):'')+'\n  '+t.rgb('cyan',registration.dashboardUrl)+'\n'+(registration.pendingHosting?'  '+t.rgb('muted','Run dev to preview in Lia. Add permanent hosting before review.')+'\n':''));
     output.write('\n  '+t.rgb('muted','DOCS  ')+t.rgb('cyan',cols()<65?'docs.lialabs.org':'https://docs.lialabs.org/packages/starters')+'\n  '+t.rgb('muted','BUILD '+ ' ')+t.rgb('cyan',cols()<65?'developers.lialabs.org':'https://developers.lialabs.org')+'\n\n');
   }
   function note(lines,title){output.write('\n'+frame(lines.map(safe),title,'blue')+'\n');}

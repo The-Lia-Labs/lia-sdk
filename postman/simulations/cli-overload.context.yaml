@@ -1,0 +1,30 @@
+purpose:
+  stands_in_for: Lia terminal API during temporary D1 saturation.
+  unblocks: Safe recovery of account reads and preview lease operations without repeating app registration.
+assumptions:
+  - id: overload-response
+    status: supported
+    claim: Lia returns 503 temporarily_unavailable with Retry-After 10 for explicit D1 saturation.
+    reason: This is the production worker error handler's defined response; the user's CLI failure matches that code.
+    verification: Inspected lia-api/src/worker.ts on 2026-11-19; authenticated production /me and /apps succeeded after the reported failure. The precise failed request was not captured.
+    source: ../lia-api/src/worker.ts app.onError; ../lia-api/src/lib/d1-errors.ts
+    updated_at: '2026-11-19'
+  - id: client-bounded-recovery
+    status: supported
+    claim: The client recovers safe operations after transient HTTP responses, respects Retry-After and stops after two retries.
+    reason: The real request code and CLI ran over HTTP against the local Postman simulation. Request logs establish one failed read followed by success and three attempts for persistent failure.
+    verification: On 2026-11-19 scripts/cli-overload-test.mjs passed 23 assertions for recovery, persistent failure, 401/400, long Retry-After, date Retry-After, cancellation, a stable preview lease and retained login credentials. This establishes client behavior against the stand-in, not future production availability.
+    source: packages/create-app/src/account.mjs; scripts/cli-overload-test.mjs; postman/mocks/lia-cli-overload/default.js
+    updated_at: '2026-11-19'
+  - id: registration-not-replayed
+    status: supported
+    claim: An app-registration POST is not automatically replayed after a 503 response.
+    reason: The mock counted exactly one POST while read and lease requests exercised retries.
+    verification: scripts/cli-overload-test.mjs on 2026-11-19 verified POST /cli/apps count equals one.
+    source: packages/create-app/src/account.mjs; scripts/cli-overload-test.mjs
+    updated_at: '2026-11-19'
+fingerprints:
+  - id: cli-0.4.1-working-tree
+    date: '2026-11-19'
+    commit: 40b5aaf plus uncommitted 0.4.1 recovery changes
+    cli: Local Postman CLI with simulation support; no cloud mock search or publication was needed for this first-party API.

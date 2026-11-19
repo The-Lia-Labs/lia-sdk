@@ -35,17 +35,30 @@ export async function savedAccount(origin=DEFAULT_API) {
 }
 export async function clearAccount(origin=DEFAULT_API) {const data=await credentials();delete data[apiOrigin(origin)];await save(data);}
 
-export class LiaAPIError extends Error { constructor(status,code){super(({unauthorized:'Sign in first with: npx @lia-labs/create-app login',developer_required:'Join Lia Developers in your browser first.',exists:'That app ID belongs to another developer. Choose another --app-id.',hosting_required:'Add your deployed HTTPS URL before submitting this app.',access_denied:'Terminal access was declined or could not be granted.',expired_token:'That sign-in expired. Run login again.'})[code]||`Lia could not complete the request (${code||status}).`);this.status=status;this.code=code;} }
-export async function cliRequest(origin,route,{method='GET',body,token,signal}={}) {
-  const res=await fetch(apiOrigin(origin)+'/api/cli'+route,{method,redirect:'error',signal:AbortSignal.any([AbortSignal.timeout(20_000),...(signal?[signal]:[])]),headers:{accept:'application/json',...(body!==undefined?{'content-type':'application/json'}:{}),...(token?{authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
-  const data=await res.json().catch(()=>({}));
-  if(!res.ok)throw new LiaAPIError(res.status,typeof data.error==='string'?data.error:'request_failed');
-  return data;
+export class LiaAPIError extends Error { constructor(status,code){super(({unauthorized:'Sign in first with: npx @lia-labs/create-app login',developer_required:'Join Lia Developers in your browser first.',exists:'That app ID belongs to another developer. Choose another --app-id.',app_id_deleted:'That app ID belonged to a deleted app. Choose a new --app-id.',hosting_required:'Add your deployed HTTPS URL before submitting this app.',access_denied:'Terminal access was declined or could not be granted.',expired_token:'That sign-in expired. Run login again.',temporarily_unavailable:'Lia is temporarily busy. Your login and local files are safe; try the command again in a moment.'})[code]||`Lia could not complete the request (${code||status}).`);this.status=status;this.code=code;} }
+export async function cliRequest(origin,route,{method='GET',body,token,signal,onRetry=()=>{}}={}) {
+  // Repeating these lease operations is safe only because the same client lease ID is reused.
+  const lease=Boolean(body?.leaseId)&&/^\/apps\/[a-z0-9-]+\/preview$/.test(route)&&['PUT','PATCH','DELETE'].includes(method);
+  const repeatable=method==='GET'||lease;
+  const bounded=AbortSignal.any([AbortSignal.timeout(35_000),...(signal?[signal]:[])]);
+  for(let attempt=0;;attempt++) {
+    const res=await fetch(apiOrigin(origin)+'/api/cli'+route,{method,redirect:'error',signal:AbortSignal.any([AbortSignal.timeout(20_000),bounded]),headers:{accept:'application/json',...(body!==undefined?{'content-type':'application/json'}:{}),...(token?{authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+    const data=await res.json().catch(()=>({}));
+    if(res.ok)return data;
+    const retryAfter=res.headers.get('retry-after');
+    const wait=retryAfter===null?500*2**attempt:/^\d+(?:\.\d+)?$/.test(retryAfter)?Number(retryAfter)*1000:Date.parse(retryAfter)-Date.now();
+    if(repeatable&&attempt<2&&[429,502,503,504].includes(res.status)&&Number.isFinite(wait)&&wait>=0&&wait<=10_000) {
+      onRetry({attempt:attempt+1,delayMs:wait,status:res.status});
+      await delay(wait,undefined,{signal:bounded});
+      continue;
+    }
+    throw new LiaAPIError(res.status,typeof data.error==='string'?data.error:'request_failed');
+  }
 }
-export async function whoami(origin=DEFAULT_API,signal) {
+export async function whoami(origin=DEFAULT_API,signal,onRetry) {
   const saved=await savedAccount(origin);
   if(!saved)throw new LiaAPIError(401,'unauthorized');
-  try { return await cliRequest(origin,'/me',{token:saved.token,signal}); }
+  try { return await cliRequest(origin,'/me',{token:saved.token,signal,onRetry}); }
   catch(error){if(error.status===401)await clearAccount(origin);throw error;}
 }
 export async function logout(origin=DEFAULT_API) {
