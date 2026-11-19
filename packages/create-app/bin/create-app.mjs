@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import * as p from '@clack/prompts';
-import color from 'picocolors';
+import { createStudio } from '../src/studio.mjs';
+import { apiOrigin, login, logout, whoami, savedAccount, registerProject, cliRequest } from '../src/account.mjs';
 import { stdin, stdout } from 'node:process';
 import { parseArgs } from 'node:util';
 import path from 'node:path';
@@ -10,11 +11,22 @@ import { scaffold, validAppId } from '../src/scaffold.mjs';
 import { directoryError, detectPackageManager, nextCommands } from '../src/terminal.mjs';
 import { installDependencies } from '../src/install.mjs';
 
+const studio = createStudio();
 const version = JSON.parse(await readFile(new URL('../package.json', import.meta.url))).version;
 const help = `
   Create a Lia app
 
   npm create @lia-labs/app@latest [directory] [options]
+
+  Commands: login, logout, whoami, register [directory], apps
+
+  --local                Create locally without connecting an account
+  --register             Register this project as a private test app
+  --url <https-url>      Optional deployed app URL
+  --name <name>          Listing name (defaults to the project name)
+  --kind <type>          app, game or utility
+  --no-browser           Print the sign-in URL without opening it
+  --api <origin>         API origin (credentials are scoped to this origin)
 
   --framework, -f <name>   ${Object.keys(frameworks).join(', ')}
   --template, -t <name>    starter or demo
@@ -39,9 +51,23 @@ const frameworkOptions = [
   ['vanilla', 'TypeScript', 'No framework needed'],
   ['elements', 'Web components', 'Custom HTML elements'],
   ['bridge', 'Low-level bridge', 'Build your own integration'],
-].map(([value, label, hint]) => ({ value, label, hint }));
+].map(([value, label, hint]) => ({ value, label, hint, badge: {react:'RE',vue:'VU',svelte:'SV',preact:'PR',solid:'SO',angular:'NG',vanilla:'TS',elements:'WC',bridge:'BR'}[value], description: hint + ' · ' + frameworks[value].binding }));
 
 let interactive = false, progress, target;
+async function connect(origin, browser=true) {
+  const controller=new AbortController();
+  try {
+    const account = await login({origin,browser,signal:controller.signal,onDevice:({url,code})=>{
+      if(interactive) studio.note(['Confirm this code in your browser:', '', code, '', url], 'CONNECT YOUR ACCOUNT');
+      else stdout.write('Open '+url+'\nConfirm code: '+code+'\n');
+    },onWaiting:()=>{if(interactive){progress=studio.task(()=>controller.abort());progress.start('Waiting for browser approval');}else stdout.write('Waiting for browser approval…\n');}});
+    if(interactive&&progress&&!progress.isCancelled)progress.stop('Connected as @'+account.username);
+    return account;
+  } catch(error) {if(controller.signal.aborted)throw new Cancelled();if(interactive)progress?.error('Sign-in did not finish');throw error;}
+}
+async function ensureAccount(origin,browser) {
+  try{return await whoami(origin);}catch(error){if(error.status!==401)throw error;if(!interactive)throw error;return connect(origin,browser);}
+}
 class Cancelled extends Error {}
 async function answer(prompt) {
   const value = await prompt;
@@ -55,9 +81,14 @@ try {
     'app-id': { type: 'string' }, pm: { type: 'string' }, 'no-mock': { type: 'boolean' },
     install: { type: 'boolean' }, 'no-install': { type: 'boolean' }, yes: { type: 'boolean', short: 'y' },
     help: { type: 'boolean', short: 'h' }, version: { type: 'boolean' },
+    local:{type:'boolean'},register:{type:'boolean'},url:{type:'string'},name:{type:'string'},kind:{type:'string'},api:{type:'string'},'no-browser':{type:'boolean'},
   } });
   if (values.help) { stdout.write(help); process.exit(0); }
   if (values.version) { stdout.write(version + '\n'); process.exit(0); }
+  const command=['login','logout','whoami','register','apps'].includes(positionals[0])?positionals.shift():'create';
+  const origin=apiOrigin(values.api);
+  if(values.local&&values.register)throw Error('Choose --local or --register.');
+  if(values.kind&&!['app','game','utility'].includes(values.kind))throw Error('Choose --kind app, game or utility.');
   if (positionals.length > 1) throw Error('Choose one project directory.');
   if (values.install && values['no-install']) throw Error('Use either --install or --no-install.');
   if (values.framework && !Object.hasOwn(frameworks, values.framework)) throw Error('Unknown framework. Use --help to see your options.');
@@ -67,25 +98,33 @@ try {
 
   const ci = process.env.CI && !['false', '0'].includes(process.env.CI);
   interactive = Boolean(stdin.isTTY && stdout.isTTY && !values.yes && !ci);
-  if (interactive) {
-    stdout.write('\n');
-    p.intro(`${color.bgBlue(color.white(color.bold(' LIA ')))}  ${color.bold('Create an app')} ${color.dim('v' + version)}`);
-    p.log.message(color.dim('From an idea to an app inside Lia.'));
+  if(interactive)studio.header(version);
+  if(command!=='create') {
+    if(command==='login') {
+      let account;
+      try {account=await whoami(origin);}catch(error){if(error.status!==401)throw error;account=await connect(origin,!values['no-browser']);}
+      if(interactive)studio.note(['Signed in as @'+account.username,'Your terminal can create and list your test apps.'],'CONNECTED');
+      else stdout.write('Signed in as @'+account.username+'\n');
+    } else if(command==='logout') {await logout(origin);stdout.write('Signed out of Lia.\n');}
+    else if(command==='whoami') {const account=await whoami(origin);stdout.write('@'+account.username+'\n');}
+    else if(command==='apps') {const saved=await savedAccount(origin);if(!saved)throw Error('Run login first.');const data=await cliRequest(origin,'/apps',{token:saved.token});const lines=data.apps.map(app=>app.id+'  ['+app.status+']  '+app.name);if(interactive)studio.note(lines.length?lines:['No apps yet. Run register from your project.'],'YOUR APPS');else stdout.write((lines.join('\n')||'No apps yet.')+'\n');}
+    else {const account=await ensureAccount(origin,!values['no-browser']);const result=await registerProject({directory:positionals[0]||'.',origin,id:values['app-id'],name:values.name,kind:values.kind,url:values.url});if(interactive)studio.launchpad({commands:[],registration:result,account,installed:true});else stdout.write('Registered '+result.appId+'\n'+result.dashboardUrl+'\n');}
   }
-  const directory = (positionals[0] || (interactive ? await answer(p.text({
+  if(command==='create') {
+  const directory = (positionals[0] || (interactive ? await answer(studio.text({
     message: 'Where should we create your app?', placeholder: 'my-lia-app', defaultValue: 'my-lia-app',
     validate: value => directoryError(value?.trim() || 'my-lia-app'),
   })) : 'my-lia-app')).trim();
   const invalidDirectory = await directoryError(directory);
   if (invalidDirectory) throw Error(invalidDirectory);
   const name = path.basename(path.resolve(directory)).toLowerCase();
-  const framework = values.framework || (interactive ? await answer(p.select({
-    message: 'Pick your framework', options: frameworkOptions, initialValue: 'react', maxItems: 9,
+  const framework = values.framework || (interactive ? await answer(studio.select({
+    message: 'Pick your framework', stage: 1, options: frameworkOptions, initialValue: 'react', maxItems: 9,
   })) : 'react');
-  const template = values.template || (interactive ? await answer(p.select({
-    message: 'What would you like to build on?', initialValue: 'starter', options: [
-      { value: 'starter', label: 'A clean starter', hint: 'A small app to make your own' },
-      { value: 'demo', label: 'The SDK playground', hint: 'Working examples of Lia features' },
+  const template = values.template || (interactive ? await answer(studio.select({
+    message: 'What would you like to build on?', stage: 2, cards: true, initialValue: 'starter', options: [
+      { value: 'starter', label: 'A clean starter', hint: 'A small app to make your own', description: 'A focused starting point. Build your own experience.' },
+      { value: 'demo', label: 'The SDK playground', hint: 'Working examples of Lia features', description: 'Explore native features with working, editable examples.' },
     ],
   })) : 'starter');
   const defaultId = name.replace(/[^a-z0-9-]/g, '-').slice(0, 40).replace(/-+$/, '').padEnd(2, 'a');
@@ -94,24 +133,24 @@ try {
   let mock = !values['no-mock'];
   let install = Boolean(values.install || (interactive && !values['no-install']));
   if (interactive) {
-    const settings = await answer(p.select({
+    const settings = await answer(studio.select({
       message: 'How should we set it up?', initialValue: 'recommended', options: [
         { value: 'recommended', label: 'Recommended', hint: [pm, mock ? 'local preview' : 'open in Lia', install ? 'install' : 'install later'].join(' · ') },
         { value: 'custom', label: 'Customize', hint: 'Choose your own settings' },
       ],
     }));
     if (settings === 'custom') {
-      if (!values['app-id']) appId = await answer(p.text({ message: 'Your public Lia app ID', placeholder: defaultId, defaultValue: defaultId,
+      if (!values['app-id']) appId = await answer(studio.text({ message: 'Your public Lia app ID', stage: 3, placeholder: defaultId, defaultValue: defaultId,
         validate: value => validAppId(value?.trim() || defaultId) ? undefined : 'Use 2–40 lowercase letters, numbers or dashes; start and end with a letter or number.',
       }));
-      if (!values.pm) pm = await answer(p.select({ message: 'Package manager', initialValue: pm,
+      if (!values.pm) pm = await answer(studio.select({ message: 'Package manager', initialValue: pm,
         options: packageManagers.map(value => ({ value, label: value, ...(value === pm ? { hint: 'Detected' } : {}) })),
       }));
       if (!values['no-mock']) mock = await answer(p.confirm({ message: 'Preview Lia features in your browser?', active: 'Yes, use simulated data', inactive: 'No, test inside Lia', initialValue: true }));
       if (!values.install && !values['no-install']) install = await answer(p.confirm({ message: 'Install dependencies now?', active: 'Yes, get everything ready', inactive: 'I’ll install them later', initialValue: true }));
     }
-    p.log.step(`${color.bold(name)} ${color.dim('· ' + frameworks[framework].label + ' · ' + (template === 'demo' ? 'SDK playground' : 'Starter'))}`);
-    progress = p.spinner({ styleFrame: color.blue });
+    studio.blueprint({name,framework:frameworks[framework].label,template,pm,mock});
+    progress = studio.task();
     progress.start('Creating your project');
   }
   target = await scaffold({ directory, name, framework, template, appId: appId.trim(), mock });
@@ -120,13 +159,13 @@ try {
   let installed = false;
   if (install) {
     const controller = new AbortController();
-    if (interactive) { progress = p.spinner({ styleFrame: color.blue, onCancel: () => controller.abort(), cancelMessage: 'Installation stopped' }); progress.start(`Installing dependencies with ${pm}`); }
+    if (interactive) { progress = studio.task(() => controller.abort()); progress.start(`Installing dependencies with ${pm}`); }
     else stdout.write(`Installing dependencies with ${pm}…\n`);
     const started = performance.now();
     try {
       await installDependencies(pm, { cwd: target, signal: controller.signal });
       installed = true;
-      if (interactive) progress.stop(`Dependencies installed ${color.dim('· ' + ((performance.now() - started) / 1000).toFixed(1) + 's')}`);
+      if (interactive) progress.stop(`Dependencies installed · ${((performance.now() - started) / 1000).toFixed(1)}s`);
       else stdout.write('Dependencies installed.\n');
     } catch (error) {
       if (controller.signal.aborted) throw new Cancelled();
@@ -135,12 +174,22 @@ try {
       process.exitCode = 1;
     }
   }
+  let registration, account;
+  let register=Boolean(values.register);
+  if(interactive&&!values.local&&!register)register=await answer(studio.select({message:'Give this app a home in Lia?',stage:4,initialValue:'connect',options:[{value:'connect',label:'Connect & register',hint:'Create your private test listing',description:'Sign in with Lia. Your app is added to your developer dashboard.'},{value:'local',label:'Keep building locally',hint:'You can register later',description:'Try everything in your browser and connect when you’re ready.'}]}))==='connect';
+  if(register) {
+    try {
+      account=await ensureAccount(origin,!values['no-browser']);
+      if(interactive){progress=studio.task();progress.start('Registering your test app');}
+      registration=await registerProject({directory:target,origin,id:appId.trim(),name:values.name,kind:values.kind,url:values.url});
+      if(interactive)progress.stop(registration.alreadyRegistered?'Linked your existing app':'Your app is registered in Testing');
+    } catch(error) {if(error instanceof Cancelled)throw error;if(interactive){progress?.error('Registration needs another try');p.log.warn(error.message+'\nYour local files are ready. Run npx @lia-labs/create-app register from your project.');}else process.stderr.write(error.message+'\n');process.exitCode=1;}
+  }
   const commands = nextCommands(directory, pm, installed);
-  if (interactive) {
-    p.note(commands.map(command => color.cyan(command)).join('\n'), 'Start building');
-    p.log.info(`${mock ? 'Your browser preview uses simulated Lia data.' : 'Open your HTTPS app inside Lia to test.'}\n${color.dim('When you’re ready, add it at developers.lialabs.org.')}`);
-    p.outro(`${color.bold(installed || !install ? 'Make it yours.' : 'Your app is created. Install packages to continue.')} ${color.dim('docs.lialabs.org/packages/starters')}`);
-  } else stdout.write(`\nNext:\n${commands.map(command => '  ' + command).join('\n')}\n\nDocs: https://docs.lialabs.org/packages/starters\n`);
+  if (interactive) studio.launchpad({commands,registration,account,installed,install});
+  else stdout.write(`${registration?'\n'+(registration.alreadyRegistered?'Linked ':'Registered ')+registration.appId+'\n'+registration.dashboardUrl+'\n'+(registration.pendingHosting?'Add your deployed HTTPS URL in the dashboard before testing.\n':''):''}\nNext:\n${commands.map(command => '  ' + command).join('\n')}\n\nDocs: https://docs.lialabs.org/packages/starters\n`);
+
+  }
 } catch (error) {
   if (error instanceof Cancelled) {
     if (interactive) { if (progress && !progress.isCancelled) progress.cancel('Setup stopped'); p.cancel(target ? 'Setup stopped. Your project files are saved.' : 'Setup cancelled. No files changed.'); }

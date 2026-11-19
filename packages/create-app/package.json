@@ -1,6 +1,6 @@
 {
   "name": "@lia-labs/create-app",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Create a Lia mini app with interactive framework starters and working SDK demos.",
   "type": "module",
   "license": "MIT",
@@ -17,7 +17,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "node --check bin/create-app.mjs && node --check src/scaffold.mjs",
+    "build": "node --check bin/create-app.mjs && node --check src/scaffold.mjs && node --check src/account.mjs && node --check src/studio.mjs",
     "test": "node --test test/*.test.mjs"
   },
   "engines": {
@@ -46,7 +46,10 @@
     "angular"
   ],
   "dependencies": {
+    "@clack/core": "1.6.0",
     "@clack/prompts": "1.9.0",
+    "fast-string-width": "3.0.2",
+    "fast-wrap-ansi": "0.2.2",
     "picocolors": "1.1.1"
   }
 }
