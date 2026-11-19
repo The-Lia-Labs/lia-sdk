@@ -1,6 +1,6 @@
 {
   "name": "@lia-labs/sdk-preact",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Preact hooks for the Lia SDK.",
   "license": "MIT",
   "type": "module",
@@ -31,7 +31,7 @@
     "build": "tsup src/index.ts --format esm,cjs --dts --clean --sourcemap"
   },
   "peerDependencies": {
-    "@lia-labs/sdk": "0.6.1",
+    "@lia-labs/sdk": "0.7.0",
     "preact": "^10"
   },
   "devDependencies": {

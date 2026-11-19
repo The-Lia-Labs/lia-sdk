@@ -1,7 +1,7 @@
 {
   "name": "@lia-labs/create-app",
-  "version": "0.4.3",
-  "description": "Build Lia mini apps with guided setup, browser login and live Cloudflare Tunnel previews.",
+  "version": "0.5.0",
+  "description": "Build Lia mini apps and secure backends with guided setup, browser login and local previews.",
   "type": "module",
   "license": "MIT",
   "author": "Lia Labs",

@@ -1,6 +1,6 @@
 {
   "name": "@lia-labs/bridge",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "The Lia app bridge: typed calls and events between a web app and Lia, and a mock for local development.",
   "license": "MIT",
   "type": "module",

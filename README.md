@@ -56,3 +56,7 @@ npm publish -w @lia-labs/sdk-react -w @lia-labs/sdk-preact -w @lia-labs/sdk-vue 
 ## Release 0.3.0
 
 All nine packages are versioned together. Adds typed photo/video capture, app-scoped media reads and cleanup, native capability detection, and current branded invitation examples. Targets the SDK 1.9 protocol; npm package versions are separate from hosted SDK versions. Camera capture requires Lia iOS build 600 / Android versionCode 900549 or newer and explicit consent. See the core package README and https://docs.lialabs.org/reference/sdk-device.
+
+## Server packages and backend starters
+
+Lia now has official server clients for TypeScript/JavaScript, Python, PHP and Go. Run `npx @lia-labs/create-app@latest backend` for a secure standalone backend, or [install a client into your existing framework](backends/README.md). Keep server keys out of frontend bundles.

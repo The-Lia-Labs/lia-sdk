@@ -55,3 +55,7 @@ The CLI starts your local dev server, installs a checksum-verified Cloudflare Tu
 Use `--port 4201` to choose a port, or `--pm pnpm` to override the detected package manager. Press **o** to open the app link, **d** for the dashboard, or **q** / Ctrl+C to stop. The live panel shows the local server, HTTPS tunnel, account and connected app. Your permanent page URL is never overwritten. Stopping disconnects the preview; a lost terminal expires its lease within two minutes. Live or paused apps cannot use local previews.
 
 The temporary tunnel URL is public to anyone who has it; the Lia listing remains restricted to its existing developer and testers. Use development data and keep secrets out of browser code. Cloudflare Quick Tunnels are for development, with no uptime guarantee; deploy permanent hosting before submitting an app for review.
+
+## Server backends
+
+Run `npx @lia-labs/create-app@latest backend` to choose TypeScript/JavaScript, Python, PHP or Go. The server project stays separate from your frontend and uses the official Lia server client. Node/Express, FastAPI/Django, PHP HTTP and Go HTTP starters include verified sessions, paid-charge checks and persistent receipt-based inventories. See [backend packages](https://docs.lialabs.org/packages/server), including Next.js, Hono and Laravel integration examples.

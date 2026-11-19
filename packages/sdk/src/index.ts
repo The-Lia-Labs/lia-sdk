@@ -35,3 +35,9 @@ export * from './bind';
 
 /** This package's version. */
 export const VERSION = '0.6.1';
+
+export { products, leaderboards, serverStorage, type Product, type ServerBoard } from './server-features';
+
+export { enableDeveloperTools, type DeveloperTools } from './developer-tools';
+
+export { createSandbox, type SandboxScenario } from './sandbox';

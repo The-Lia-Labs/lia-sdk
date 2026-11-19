@@ -1,6 +1,6 @@
 {
   "name": "@lia-labs/elements",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Web components for the Lia SDK: <lia-main-button>, <lia-back-button> and more, for any page.",
   "license": "MIT",
   "type": "module",
@@ -34,7 +34,7 @@
     "build": "rm -rf dist && tsup"
   },
   "dependencies": {
-    "@lia-labs/sdk": "0.6.1"
+    "@lia-labs/sdk": "0.7.0"
   },
   "unpkg": "./dist/auto.global.js",
   "author": "Lia Labs",

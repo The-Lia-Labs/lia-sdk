@@ -10,7 +10,7 @@ import { projectFiles, scaffold } from '../src/scaffold.mjs';
 for(const framework of Object.keys(frameworks))for(const template of ['starter','demo'])test(`${framework}: complete ${template} project`,async()=>{
  const files=await projectFiles({name:'my-app',appId:'my-app',framework,template});
  const pkg=JSON.parse(files['package.json']);
- assert.equal(pkg.dependencies[frameworks[framework].binding],'0.6.1');
+ assert.equal(pkg.dependencies[frameworks[framework].binding],'0.7.0');
  assert(files['src/'+frameworks[framework].entry]);assert(files['src/styles.css']);
  if(template==='demo') assert(files['src/demo.ts']);
  else {

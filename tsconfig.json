@@ -7,6 +7,9 @@
       ],
       "@lia-labs/sdk": [
         "./packages/sdk/src/index.ts"
+      ],
+      "@lia-labs/server": [
+        "./packages/server/src/index.ts"
       ]
     }
   },

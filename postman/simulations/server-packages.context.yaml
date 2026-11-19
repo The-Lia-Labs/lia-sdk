@@ -1,0 +1,29 @@
+purpose:
+  stands_in_for: Lia app server API for the four official backend client packages.
+  unblocks: Cross-language request serialization, retry, redirect, deadline and signature verification.
+assumptions:
+  - id: server-api-contract
+    status: supported
+    claim: All four clients serialize the 27 named operations using the shared first-party route contract.
+    reason: The contract was read from lia-api routes; tests compare actual HTTP method, path, body and query for every operation. Python sync and async transports are exercised.
+    verification: scripts/test-backends.mjs passed on 2026-11-19 against the local Postman simulation. This proves client behavior against the stand-in, not production deployment status.
+    source: backends/contract.json; scripts/server-conformance.mjs; backends/python/tests/conformance.py; backends/php/tests/conformance.php; backends/go/client_test.go
+    updated_at: '2026-11-19'
+  - id: bounded-replay
+    status: supported
+    claim: Transient reads and interrupted writes retry within a deadline, with an identical mutation key/body; long Retry-After values stop rather than hammering the API.
+    reason: Each language made two attempts for transient read and interrupted mutation, one for Retry-After 60, and never followed the credentialed redirect.
+    verification: Final aggregate counters were asserted by scripts/test-backends.mjs; all four timeout tests and raw signature tampering/expiry tests passed.
+    source: postman/mocks/lia-server-conformance/default.cjs; scripts/test-backends.mjs
+    updated_at: '2026-11-19'
+  - id: authoritative-session-expiry
+    status: supported
+    claim: Session exp is Unix milliseconds; clients reject expired or mismatched-mode verified responses.
+    reason: This matches the actual signSession/readSession implementation, and the official Node client also authenticated a real local Worker-issued session.
+    verification: scripts/developer-server-features-local-test.mjs in lia-api passed on 2026-11-19, including mode isolation, CAS storage and signed durable webhooks.
+    source: lia-api/src/apps/registry.ts; lia-api/src/routes/developer.ts; lia-api/scripts/developer-server-features-local-test.mjs
+    updated_at: '2026-11-19'
+fingerprints:
+  - id: server-packages-0-1-0
+    date: '2026-11-19'
+    cli: Postman CLI 1.76.0. First-party mock authored locally from Lia source; no external owner search or cloud publication needed.

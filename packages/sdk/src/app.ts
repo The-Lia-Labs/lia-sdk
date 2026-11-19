@@ -1,3 +1,4 @@
+import { bindRewardChallenge } from './server-features';
 import { LiaError, on, request, send, type AdFormat, type AdResult, type AdState, type BannerPosition, type BannerResult, type NativeAdPlacement, type NativeAdResult, type Charge, type Events, type HapticKind, type Leaderboard, type PopupButton, type PopupButtonType, type LocationAccuracy, type Position, type Reminder } from '@lia-labs/bridge';
 import { $isFullscreen, $link, $notificationsAllowed, $viewport } from './state';
 import { color, once, startParam as checkStartParam, text } from './validate';
@@ -55,6 +56,8 @@ export function onCharge(listener: (charge: Charge) => void): () => void {
 
 export interface AdOptions {
   format?: AdFormat;
+  /** Challenge issued by your server through POST /ads/challenges. */
+  rewardContextId?: string;
   /** Hears each stage: "loading", "showing", "closed". */
   onState?: (state: AdState) => void;
 }
@@ -63,9 +66,12 @@ export interface AdOptions {
 export async function showAd(options: AdOptions = {}): Promise<AdResult> {
   const format = options.format ?? 'rewarded';
   if (!['rewarded', 'rewardedInterstitial', 'interstitial'].includes(format)) throw new LiaError('bad_format', 'rewarded, rewardedInterstitial or interstitial.');
+  if (options.rewardContextId && (!/^rc_[a-f0-9]{32}$/.test(options.rewardContextId) || format === 'interstitial')) throw new LiaError('invalid_challenge', 'Reward challenges require a rewarded format and a server-issued ID.');
   const stop = options.onState ? on('ad', (d: Events['ad']) => options.onState!(d?.state)) : null;
   try {
-    return await request('showAd', { format });
+    const result = await request('showAd', { format });
+    if (options.rewardContextId && result.adId) await bindRewardChallenge(options.rewardContextId,result.adId);
+    return result;
   } finally {
     stop?.();
   }

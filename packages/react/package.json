@@ -1,6 +1,6 @@
 {
   "name": "@lia-labs/sdk-react",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "React hooks for the Lia SDK.",
   "license": "MIT",
   "type": "module",
@@ -31,7 +31,7 @@
     "build": "tsup src/index.ts --format esm,cjs --dts --clean --sourcemap"
   },
   "peerDependencies": {
-    "@lia-labs/sdk": "0.6.1",
+    "@lia-labs/sdk": "0.7.0",
     "react": "^18 || ^19"
   },
   "devDependencies": {

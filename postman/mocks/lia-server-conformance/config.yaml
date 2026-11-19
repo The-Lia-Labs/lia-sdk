@@ -1,0 +1,10 @@
+version: 1
+name: lia-server-conformance
+slug: lia-server-conformance
+protocol: http
+port: 4591
+interceptRequests: true
+scenarios:
+  - name: default
+    path: ./default.cjs
+    default: true

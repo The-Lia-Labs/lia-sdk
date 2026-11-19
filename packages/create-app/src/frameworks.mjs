@@ -1,4 +1,4 @@
-export const SDK_VERSION = '0.6.1';
+export const SDK_VERSION = '0.7.0';
 export const frameworks = {
   vanilla: { label: 'Plain TypeScript', binding: '@lia-labs/sdk', entry: 'main.ts' },
   react: { label: 'React', binding: '@lia-labs/sdk-react', entry: 'main.tsx', dependencies: { react: '^19.3.1', 'react-dom': '^19.3.1' }, devDependencies: { '@vitejs/plugin-react': '^6.1.2', '@types/react': '^19.3.0', '@types/react-dom': '^19.3.0' }, plugin: "import react from '@vitejs/plugin-react';", plugins: 'react()', jsx: 'react-jsx' },

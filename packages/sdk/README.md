@@ -97,3 +97,9 @@ console.log(getPageInteractions());
 ```
 
 Each option (`zoom`, `textSelection`, `contextMenu`, `nativeDrag`) is a boolean and defaults to `false`. A partial update preserves other options. The script-tag equivalents are `Lia.setPageInteractions()` and `Lia.getPageInteractions()`. Enabling restores browser behavior; remove your own restrictive CSS/viewport directives too. Browser and OS accessibility settings remain in control of system magnification. Importing the module is safe during server rendering; call the setter in the browser.
+
+## Server-backed games
+
+`products()` reads the catalogue using the player session. `leaderboards.get(board, season)` reads server-managed rankings and `serverStorage.get(key)` reads server-controlled player data. Server writes require an official [backend package](https://docs.lialabs.org/packages/server); frontend code cannot write those values. `showRewardedAd({rewardContextId})` binds a server-issued challenge to the resulting ad. Your backend claims it and grants once. Live valuable rewards need provider SSV and an updated native host.
+
+`enableDeveloperTools()` enables a local metadata-only inspector in test sessions. Call `dispose()` when finished. `createSandbox()` supplies local failed/interrupted purchase, expired session, unavailable ad and repeated-reward scenarios; it cannot verify real payments or ad rewards.

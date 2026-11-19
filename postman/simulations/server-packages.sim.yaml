@@ -1,0 +1,7 @@
+simulation: server-packages
+routing: path
+mocks:
+  - name: Lia server API
+    routeKey: lia
+    origin: api.lialabs.org
+    path: postman/mocks/lia-server-conformance

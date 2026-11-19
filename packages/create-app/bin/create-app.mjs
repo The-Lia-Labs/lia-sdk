@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { backendSetup } from '../src/backend.mjs';
 import * as p from '@clack/prompts';
 import { createStudio } from '../src/studio.mjs';
 import { apiOrigin, login, logout, whoami, savedAccount, registerProject, cliRequest, openBrowser } from '../src/account.mjs';
@@ -20,8 +21,9 @@ const help = `
 
   npm create @lia-labs/app@latest [directory] [options]
 
-  Commands: login, logout, whoami, register [directory], apps, dev [directory]
+  Commands: login, logout, whoami, register [directory], apps, dev [directory], backend [directory]
 
+  --language <language>  Backend: typescript, python, php or go
   --port <port>          Local preview port (dev only)
   --local                Create locally without connecting an account
   --register             Register this project as a private test app
@@ -113,7 +115,7 @@ async function answer(prompt) {
 
 try {
   const { values, positionals } = parseArgs({ allowPositionals: true, options: {
-    framework: { type: 'string', short: 'f' }, template: { type: 'string', short: 't' },
+    language: { type: 'string' }, framework: { type: 'string', short: 'f' }, template: { type: 'string', short: 't' },
     'app-id': { type: 'string' }, pm: { type: 'string' }, 'no-mock': { type: 'boolean' },
     install: { type: 'boolean' }, 'no-install': { type: 'boolean' }, yes: { type: 'boolean', short: 'y' },
     help: { type: 'boolean', short: 'h' }, version: { type: 'boolean' },
@@ -121,7 +123,13 @@ try {
   } });
   if (values.help) { stdout.write(help); process.exit(0); }
   if (values.version) { stdout.write(version + '\n'); process.exit(0); }
-  const command=['login','logout','whoami','register','apps','dev'].includes(positionals[0])?positionals.shift():'create';
+  const command=['login','logout','whoami','register','apps','dev','backend'].includes(positionals[0])?positionals.shift():'create';
+  if(command==='backend'){
+    if(positionals.length>1)throw Error('Choose one backend directory.');
+    const ci=process.env.CI&&!['false','0'].includes(process.env.CI);interactive=Boolean(stdin.isTTY&&stdout.isTTY&&!values.yes&&!ci);
+    if(interactive)studio.header(version);
+    await backendSetup({values,directory:positionals[0],studio,interactive,answer});process.exit(0);
+  }
   const origin=apiOrigin(values.api);
   if(values.local&&values.register)throw Error('Choose --local or --register.');
   if(values.kind&&!['app','game','utility'].includes(values.kind))throw Error('Choose --kind app, game or utility.');

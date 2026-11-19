@@ -1,6 +1,6 @@
 {
   "name": "@lia-labs/sdk",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "The Lia SDK, typed and tree-shakeable: players, payments, invites, notifications, ads, buttons, storage, the phone, and its state as observable values.",
   "license": "MIT",
   "type": "module",
@@ -32,7 +32,7 @@
     "build": "rm -rf dist && tsup"
   },
   "dependencies": {
-    "@lia-labs/bridge": "0.6.1"
+    "@lia-labs/bridge": "0.7.0"
   },
   "unpkg": "./dist/index.global.js",
   "author": "Lia Labs",
