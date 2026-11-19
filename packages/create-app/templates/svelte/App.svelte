@@ -1,4 +1,5 @@
 <script lang="ts">
+import { t } from './i18n';
   import { initStore, ready, toast, stores, useMainButton } from './lia';
   import { mocked } from './local-dev';
   import { FRAMEWORK, SDK_PACKAGE } from './config';
@@ -8,7 +9,7 @@
   let selected=groups[0].id, busy:string|null=null, result='Choose a feature to see its response.', failed=false, announced=false;
   $: section=groups.find(group=>group.id===selected)!;
   $: if($lia.status==='ready'&&!announced){announced=true;ready();}
-  useMainButton({text:'Try a toast',onClick:()=>{void toast('Hello from Svelte').catch(error=>{failed=true;result=errorMessage(error);});}});
+  useMainButton({text:t('Try a toast'),onClick:()=>{void toast('Hello from Svelte').catch(error=>{failed=true;result=errorMessage(error);});}});
   async function run(action:DemoAction){if(busy)return;busy=action.id;failed=false;try{result=formatResult(await executeAction(action));}catch(error){failed=true;result=errorMessage(error);}finally{busy=null;}}
 </script>
 {#if $lia.status!=='ready'}

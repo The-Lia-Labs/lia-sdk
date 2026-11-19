@@ -160,7 +160,7 @@ try {
   })) : 'react');
   const template = values.template || (interactive ? await answer(studio.select({
     message: 'What would you like to build on?', stage: 2, cards: true, initialValue: 'starter', options: [
-      { value: 'starter', label: 'A clean starter', hint: 'A small app to make your own', description: 'A focused starting point. Build your own experience.' },
+      { value: 'starter', label: 'A clean starter', hint: 'Your app name, with the SDK ready', description: 'A simple welcome page. Start building from a clean canvas.' },
       { value: 'demo', label: 'The SDK playground', hint: 'Working examples of Lia features', description: 'Explore native features with working, editable examples.' },
     ],
   })) : 'starter');
@@ -190,7 +190,7 @@ try {
     progress = studio.task();
     progress.start('Creating your project');
   }
-  target = await scaffold({ directory, name, framework, template, appId: appId.trim(), mock });
+  target = await scaffold({ directory, name, displayName: values.name, framework, template, appId: appId.trim(), mock });
   if (interactive) progress.stop('Project files ready');
   else stdout.write(`\nCreated ${name} with ${frameworks[framework].label}.\n`);
   let installed = false;

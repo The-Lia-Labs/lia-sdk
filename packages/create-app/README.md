@@ -17,7 +17,9 @@ bun create @lia-labs/app my-game --framework solid
 
 For CI, use `--yes --no-install` (or `--install`) and the options printed by `--help`. Existing nonempty directories and symlink destinations are rejected; files are never overwritten. Dependencies are installed only after your selection, using an allowlisted package manager without interpolating project input into a shell command.
 
-Framework projects use their own hooks, composables, stores or signals for initialization, player identity, language and native controls. Demo templates include typed feature examples with source code, loading states, cancellation and unsupported-device feedback. The advanced bridge template demonstrates the typed raw protocol; web components include `<lia-app>` and `<lia-main-button>`.
+**Clean starter** opens a small welcome page that says “Your app name has a home in Lia.” The SDK is installed and initialized using your framework’s hooks, composables, stores or signals. It follows Lia’s theme and safe areas, with one quickstart link and no feature catalogue or example purchases. Customize the name with `--name "Your app name"` or edit `APP_NAME` in `src/config.ts`.
+
+**SDK playground** includes typed feature examples with source code, loading states, cancellation and unsupported-device feedback. Its advanced bridge template demonstrates the typed raw protocol; its web-components template includes `<lia-app>` and `<lia-main-button>`.
 
 Local development uses `mockLia()` only outside Lia. Production builds remove the simulation (Angular uses a production file replacement). Permissions, hardware, real session verification and server-side delivery must be tested in Lia. Client examples do not grant balances or deliver purchases. Valuable operations require server verification and durable duplicate protection.
 

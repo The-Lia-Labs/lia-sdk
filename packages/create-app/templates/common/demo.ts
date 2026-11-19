@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import * as Lia from './lia';
 import { PRODUCT_ID } from './config';
 
@@ -7,10 +8,10 @@ const action = (id: string, label: string, description: string, code: string, ru
 let media: string | null = null;
 export const groups: DemoGroup[] = [
   { id: 'interface', title: 'Interface', description: 'Native feedback and dialogs, with the same look as Lia.', actions: [
-    action('toast','Show a toast','A small piece of feedback that does not interrupt the user.',"await toast('Hello from your app');",()=>Lia.toast('Hello from your app')),
-    action('confirm','Ask for confirmation','Let the user make a decision in a native sheet.',"await confirm({ title: 'Try this feature?', body: 'You can cancel.', confirm: 'Continue' });",()=>Lia.confirm({title:'Try this feature?',body:'You can cancel.',confirm:'Continue'})),
-    action('popup','Choose an option','Show up to three choices.',"await showPopup({ message: 'Choose a colour', buttons: [{ id: 'blue', text: 'Blue' }, { id: 'green', text: 'Green' }] });",()=>Lia.showPopup({message:'Choose a colour',buttons:[{id:'blue',text:'Blue'},{id:'green',text:'Green'}]})),
-    action('alert','Show an alert','Wait until the user dismisses a short message.',"await showAlert('You are ready to build.');",()=>Lia.showAlert('You are ready to build.')),
+    action('toast','Show a toast','A small piece of feedback that does not interrupt the user.',"await toast('Hello from your app');",()=>Lia.toast(t('Hello from your app'))),
+    action('confirm','Ask for confirmation','Let the user make a decision in a native sheet.',"await confirm({ title: 'Try this feature?', body: 'You can cancel.', confirm: 'Continue' });",()=>Lia.confirm({title:t('Try this feature?'),body:t('You can cancel.'),confirm:t('Continue')})),
+    action('popup','Choose an option','Show up to three choices.',"await showPopup({ message: 'Choose a colour', buttons: [{ id: 'blue', text: 'Blue' }, { id: 'green', text: 'Green' }] });",()=>Lia.showPopup({message:t('Choose a colour'),buttons:[{id:'blue',text:t('Blue')},{id:'green',text:t('Green')}]})),
+    action('alert','Show an alert','Wait until the user dismisses a short message.',"await showAlert('You are ready to build.');",()=>Lia.showAlert(t('You are ready to build.'))),
     action('haptic','Feel a tap','Native haptics work on supported phones.',"await haptic('success');",()=>Lia.haptic('success')),
   ]},
   { id: 'identity', title: 'Player & session', description: 'Identity comes from Lia. Verify the session on your server.', actions: [
@@ -49,15 +50,15 @@ export const groups: DemoGroup[] = [
   ]},
   { id: 'device', title: 'Device & media', description: 'Permissions are requested only after you choose an action. Hardware features must also be tested in Lia.', actions: [
     action('biometric','Check biometrics','Find out whether the device supports authentication.', 'await biometric.init();',()=>Lia.biometric.init()),
-    action('authenticate','Authenticate','Ask the user to confirm their identity on this device.', "await biometric.authenticate({ reason: 'Try this SDK example' });",()=>Lia.biometric.authenticate({reason:'Try this SDK example'})),
-    action('qr','Scan a QR code','Open Lia’s scanner. Cancellation is normal.', "await scanQr({ text: 'Scan a demo code' });",()=>Lia.scanQr({text:'Scan a demo code'})),
-    action('copy','Copy text','Copy a short message to the clipboard.', "await copyText('Built with Lia');",()=>Lia.copyText('Built with Lia')),
+    action('authenticate','Authenticate','Ask the user to confirm their identity on this device.', "await biometric.authenticate({ reason: 'Try this SDK example' });",()=>Lia.biometric.authenticate({reason:t('Try this SDK example')})),
+    action('qr','Scan a QR code','Open Lia’s scanner. Cancellation is normal.', "await scanQr({ text: 'Scan a demo code' });",()=>Lia.scanQr({text:t('Scan a demo code')})),
+    action('copy','Copy text','Copy a short message to the clipboard.', "await copyText('Built with Lia');",()=>Lia.copyText(t('Built with Lia'))),
     action('clipboard','Read clipboard','Lia and the operating system may ask permission.', 'await readClipboard();',()=>Lia.readClipboard()),
     action('location','Request approximate location','Use the least precise location your feature needs.', "await location.get({ accuracy: 'low' });",()=>Lia.location.get({accuracy:'low'}),{capability:'location'}),
     action('photo','Capture a photo','Files stay on the device until you choose to upload them.', 'const photo = await capturePhoto();',async()=>{const photo=await Lia.capturePhoto();if(!photo.cancelled)media=photo.id;return photo;},{capability:'capturePhoto'}),
     action('video','Capture a video','Explicit permission is required on a supported Lia version.', 'const video = await captureVideo();',async()=>{const video=await Lia.captureVideo();if(!video.cancelled)media=video.id;return video;},{capability:'captureVideo'}),
-    action('media-read','Read a captured file','Capture first. The readout omits the actual file contents.', 'await readMedia(capturedId, 0);',()=>{if(!media)throw Error('Capture a photo or video first.');return Lia.readMedia(media,0);},{capability:'readMedia'}),
-    action('media-release','Release captured file','Let Lia clean up the temporary capture.', 'await releaseMedia(capturedId);',async()=>{if(!media)throw Error('No captured file.');const result=await Lia.releaseMedia(media);media=null;return result;}),
+    action('media-read','Read a captured file','Capture first. The readout omits the actual file contents.', 'await readMedia(capturedId, 0);',()=>{if(!media)throw Error(t('Capture a photo or video first.'));return Lia.readMedia(media,0);},{capability:'readMedia'}),
+    action('media-release','Release captured file','Let Lia clean up the temporary capture.', 'await releaseMedia(capturedId);',async()=>{if(!media)throw Error(t('No captured file.'));const result=await Lia.releaseMedia(media);media=null;return result;}),
     action('motion-start','Start accelerometer','Read the reactive accelerometer.reading value in your component.', 'await accelerometer.start({ refreshRate: 500 });',()=>Lia.accelerometer.start({refreshRate:500})),
     action('motion-read','Inspect motion reading','The reading updates through the SDK’s observable state.', 'accelerometer.reading.get();',()=>Lia.accelerometer.reading.get()),
     action('motion-stop','Stop accelerometer','Stop sensors when your feature no longer needs them.', 'await accelerometer.stop();',()=>Lia.accelerometer.stop()),
@@ -73,10 +74,10 @@ export const groups: DemoGroup[] = [
   ]},
   { id: 'notifications', title: 'Notifications & reminders', description: 'Respect opt-outs. Server announcements use your secret server key on your backend, never in browser code.', actions: [
     action('notification','Request app notifications','Ask to receive notifications from this app.', 'await requestNotifications();',()=>Lia.requestNotifications()),
-    action('reminder','Schedule a demo reminder','Ask for one reminder in 60 seconds.', "await reminders.schedule({ id: 'sdk-demo', title: 'Your demo reminder', inSeconds: 60 });",()=>Lia.reminders.schedule({id:'sdk-demo',title:'Your demo reminder',inSeconds:60}),{capability:'reminders'}),
+    action('reminder','Schedule a demo reminder','Ask for one reminder in 60 seconds.', "await reminders.schedule({ id: 'sdk-demo', title: 'Your demo reminder', inSeconds: 60 });",()=>Lia.reminders.schedule({id:'sdk-demo',title:t('Your demo reminder'),inSeconds:60}),{capability:'reminders'}),
     action('reminders','List reminders','View this app’s scheduled reminders.', 'await reminders.list();',()=>Lia.reminders.list(),{capability:'reminders'}),
     action('reminder-cancel','Cancel demo reminder','Cancel only the reminder created by this example.', "await reminders.cancel('sdk-demo');",()=>Lia.reminders.cancel('sdk-demo'),{capability:'reminders'}),
-    action('calendar','Add a calendar event','Lia opens a calendar file in the share sheet.', "await addToCalendar({ title: 'Try my Lia app', start: Date.now() + 3600000 });",()=>Lia.addToCalendar({title:'Try my Lia app',start:Date.now()+3600000}),{capability:'calendar'}),
+    action('calendar','Add a calendar event','Lia opens a calendar file in the share sheet.', "await addToCalendar({ title: 'Try my Lia app', start: Date.now() + 3600000 });",()=>Lia.addToCalendar({title:t('Try my Lia app'),start:Date.now()+3600000}),{capability:'calendar'}),
   ]},
   { id: 'scores', title: 'Scores', description: 'Competitive results and valuable rewards need independent server validation.', actions: [
     action('score','Submit a demo score','Only enabled in test mode. This is not an anti-cheat system.', 'await submitScore(42);',()=>Lia.submitScore(42),{testOnly:true}),

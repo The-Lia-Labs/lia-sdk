@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import { request } from './lia';
 import { PRODUCT_ID } from './config';
 export type DemoAction={id:string;label:string;description:string;code:string;run:()=>unknown|Promise<unknown>;testOnly?:boolean};
@@ -5,9 +6,9 @@ export type DemoGroup={id:string;title:string;description:string;actions:DemoAct
 const action=(id:string,label:string,description:string,code:string,run:DemoAction['run'],testOnly=false):DemoAction=>({id,label,description,code,run,testOnly});
 export const groups:DemoGroup[]=[
  {id:'interface',title:'Interface',description:'The raw typed messages used by SDK helpers.',actions:[
- action('toast','Toast','The bridge validates method names and parameter types.',"await request('toast', { text: 'Hello', position: 'bottom', tone: 'info' });",()=>request('toast',{text:'Hello from the bridge',position:'bottom',tone:'info'})),
+ action('toast','Toast','The bridge validates method names and parameter types.',"await request('toast', { text: 'Hello', position: 'bottom', tone: 'info' });",()=>request('toast',{text:t('Hello from the bridge'),position:'bottom',tone:'info'})),
  action('haptic','Haptics','A native success tap.',"await request('haptic', { kind: 'success' });",()=>request('haptic',{kind:'success'})),
- action('confirm','Confirm','A native decision sheet.',"await request('confirm', { title: 'Try it?', body: 'You can cancel.', confirm: 'Continue', danger: false });",()=>request('confirm',{title:'Try it?',body:'You can cancel.',confirm:'Continue',danger:false})),
+ action('confirm','Confirm','A native decision sheet.',"await request('confirm', { title: 'Try it?', body: 'You can cancel.', confirm: 'Continue', danger: false });",()=>request('confirm',{title:t('Try it?'),body:t('You can cancel.'),confirm:t('Continue'),danger:false})),
  ]},
  {id:'identity',title:'Identity',description:'Keep authentication and valuable decisions on your server.',actions:[
  action('init','Initialization','Inspect the host response. Session tokens are redacted.',"await request('init');",()=>request('init')),
@@ -29,10 +30,10 @@ export const groups:DemoGroup[]=[
  action('remove','Remove preference','Remove only the demo key.',"await request('cloudStorage', { op: 'remove', keys: ['demo.preference'] });",()=>request('cloudStorage',{op:'remove',keys:['demo.preference']})),
  ]},
  {id:'social',title:'Sharing & notifications',description:'The host handles dialogs and user permissions.',actions:[
- action('share','Share','Open the native share sheet.',"await request('share', { text: 'Built with Lia' });",()=>request('share',{text:'Built with Lia'})),
+ action('share','Share','Open the native share sheet.',"await request('share', { text: 'Built with Lia' });",()=>request('share',{text:t('Built with Lia')})),
  action('invite','Invite a friend','Use Lia’s friend picker.',"await request('inviteFriend', { startParam: 'demo' });",()=>request('inviteFriend',{startParam:'demo'})),
  action('notify','Notifications','Respect the choice returned by the host.',"await request('requestNotifications');",()=>request('requestNotifications')),
- action('qr','Scan QR','Cancellation is a normal outcome.',"await request('scanQr', { text: 'Scan a demo code' });",()=>request('scanQr',{text:'Scan a demo code'})),
+ action('qr','Scan QR','Cancellation is a normal outcome.',"await request('scanQr', { text: 'Scan a demo code' });",()=>request('scanQr',{text:t('Scan a demo code')})),
  ]},
  {id:'layout',title:'Layout',description:'Manage the host through typed requests; listen with on(event, handler).',actions:[
  action('expand','Expand','Expand a sheet.',"await request('expand');",()=>request('expand')),

@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import * as Lia from './lia';
 import { mocked } from './local-dev';
 import { FRAMEWORK, SDK_PACKAGE } from './config';
@@ -40,7 +41,7 @@ export function mount(options: { nativeButton?: boolean } = {}) {
       try{result.textContent=formatResult(await executeAction(action));}catch(error){result.className='error';result.textContent=errorMessage(error);}finally{busy=false;button.textContent='Try it';button.removeAttribute('aria-busy');root.querySelectorAll<HTMLButtonElement>('.run').forEach(button=>button.disabled=false);}
     }
     render();
-    if(options.nativeButton!==false){const control=Lia.controlBottomButton(Lia.mainButton,{text:'Try a toast',onClick:()=>{void Lia.toast('Hello from '+FRAMEWORK).catch(error=>{root.querySelector('#result')!.textContent=errorMessage(error);});}});cleanups.push(()=>control.dispose());}
+    if(options.nativeButton!==false){const control=Lia.controlBottomButton(Lia.mainButton,{text:t('Try a toast'),onClick:()=>{void Lia.toast(t('Hello from {framework}').replace('{framework}', FRAMEWORK)).catch(error=>{root.querySelector('#result')!.textContent=errorMessage(error);});}});cleanups.push(()=>control.dispose());}
     requestAnimationFrame(()=>{if(!disposed)Lia.ready();});
   }).catch(error=>{if(!disposed){root.replaceChildren();const main=document.createElement('main'),title=document.createElement('h1'),message=document.createElement('p');title.textContent='Open this app in Lia';message.textContent=errorMessage(error);main.append(title,message);root.append(main);}});
   return ()=>{disposed=true;cleanups.forEach(dispose=>dispose());};

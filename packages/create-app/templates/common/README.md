@@ -46,3 +46,7 @@ This client starter deliberately does not include an insecure `/api/deliver` stu
 - SDK reference: https://docs.lialabs.org/reference/sdk
 
 Lia SDK packages and this starter are MIT licensed. Open developer access is planned for Q1 2027; current developer and publication access follows the portal's approval process.
+
+## Languages
+
+The page follows the language selected in Lia. Browser previews detect the browser language; use `?lang=ar` (or another supported language code) to preview a translation. English is the fallback. Arabic uses right-to-left layout. All 13 Lia languages are included in `src/i18n.ts`. Extend its catalogue when you add your own UI. Code examples, app names and API response data are kept unchanged.

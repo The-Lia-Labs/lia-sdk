@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from './i18n';
 import { computed, ref, watch } from 'vue';
 import { ready, toast, useInit, useLanguage, useMode, usePlayer, useMainButton } from './lia';
 import { mocked } from './local-dev';
@@ -10,7 +11,7 @@ const status=lia.status, initError=lia.error;
 const selected=ref(groups[0].id), busy=ref<string|null>(null), result=ref('Choose a feature to see its response.'), failed=ref(false);
 const section=computed(()=>groups.find(group=>group.id===selected.value)!);
 watch(status,value=>{if(value==='ready')ready();},{immediate:true});
-useMainButton(()=>status.value==='ready'&&{text:'Try a toast',onClick:()=>{void toast('Hello from Vue').catch(error=>{failed.value=true;result.value=errorMessage(error);});}});
+useMainButton(()=>status.value==='ready'&&{text:t('Try a toast'),onClick:()=>{void toast('Hello from Vue').catch(error=>{failed.value=true;result.value=errorMessage(error);});}});
 async function run(action:DemoAction){if(busy.value)return;busy.value=action.id;failed.value=false;try{result.value=formatResult(await executeAction(action));}catch(error){failed.value=true;result.value=errorMessage(error);}finally{busy.value=null;}}
 </script>
 <template>

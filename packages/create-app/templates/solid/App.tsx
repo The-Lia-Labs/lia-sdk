@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import { createEffect, createSignal, For, Show } from 'solid-js';
 import { createInit, createMainButton, ready, toast, useLanguage, useMode, usePlayer } from './lia';
 import { mocked } from './local-dev';
@@ -9,7 +10,7 @@ export function App(){
   const [selected,setSelected]=createSignal(groups[0].id),[busy,setBusy]=createSignal<string|null>(null),[result,setResult]=createSignal('Choose a feature to see its response.'),[failed,setFailed]=createSignal(false);
   const section=()=>groups.find(group=>group.id===selected())!;
   createEffect(()=>{if(lia().status==='ready')ready();});
-  createMainButton(()=>lia().status==='ready'&&{text:'Try a toast',onClick:()=>{void toast('Hello from Solid').catch(error=>{setFailed(true);setResult(errorMessage(error));});}});
+  createMainButton(()=>lia().status==='ready'&&{text:t('Try a toast'),onClick:()=>{void toast('Hello from Solid').catch(error=>{setFailed(true);setResult(errorMessage(error));});}});
   async function run(action:DemoAction){if(busy())return;setBusy(action.id);setFailed(false);try{setResult(formatResult(await executeAction(action)));}catch(error){setFailed(true);setResult(errorMessage(error));}finally{setBusy(null);}}
   return <Show when={lia().status==='ready'} fallback={<div class="loading"><div><h1>{lia().status==='loading'?'Connecting to Lia…':'Open this app in Lia'}</h1><p>{lia().status==='error'?errorMessage(lia().error):'Loading your player, language and theme.'}</p></div></div>}>
     <main><header><div class="brand"><span class="mark" aria-hidden="true">{'</>'}</span>Lia Developer Kit</div><span class="badge">{mocked?'Local simulation':mode()==='test'?'Lia test mode':'Lia live mode'}</span></header>

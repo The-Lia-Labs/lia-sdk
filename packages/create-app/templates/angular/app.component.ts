@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import { Component, effect, signal } from '@angular/core';
 import { injectInit, injectLanguage, injectMode, injectPlayer, injectMainButton, ready, toast } from './lia';
 import { mocked } from './local-dev';
@@ -22,7 +23,7 @@ export class AppComponent{
   readonly lia=injectInit();readonly player=injectPlayer();readonly language=injectLanguage();readonly mode=injectMode();
   readonly framework=FRAMEWORK;readonly binding=SDK_PACKAGE;readonly mocked=mocked;readonly groups=groups;readonly source=exampleSource;readonly errorMessage=errorMessage;
   readonly selected=signal(groups[0].id);readonly busy=signal<string|null>(null);readonly result=signal('Choose a feature to see its response.');readonly failed=signal(false);
-  readonly main=injectMainButton({text:'Try a toast',onClick:()=>{void toast('Hello from Angular').catch(error=>{this.failed.set(true);this.result.set(errorMessage(error));});}});
+  readonly main=injectMainButton({text:t('Try a toast'),onClick:()=>{void toast(t('Hello from {framework}').replace('{framework}', FRAMEWORK)).catch(error=>{this.failed.set(true);this.result.set(errorMessage(error));});}});
   constructor(){effect(()=>{if(this.lia().status==='ready')requestAnimationFrame(()=>ready());});}
   get section(){return groups.find(group=>group.id===this.selected())!;}
   async run(action:DemoAction){if(this.busy())return;this.busy.set(action.id);this.failed.set(false);try{this.result.set(formatResult(await executeAction(action)));}catch(error){this.failed.set(true);this.result.set(errorMessage(error));}finally{this.busy.set(null);}}

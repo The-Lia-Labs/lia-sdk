@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import { useEffect, useState } from 'react';
 import { ready, toast, useInit, useLanguage, useMode, usePlayer, useMainButton } from './lia';
 import { mocked } from './local-dev';
@@ -14,7 +15,7 @@ export function App() {
   const [failed, setFailed] = useState(false);
   const section = groups.find(group => group.id === selected)!;
   useEffect(() => { if (lia.status === 'ready') ready(); }, [lia.status]);
-  useMainButton(lia.status === 'ready' && { text: 'Try a toast', onClick: () => { void toast('Hello from __FRAMEWORK__').catch(error => { setFailed(true); setResult(errorMessage(error)); }); } });
+  useMainButton(lia.status === 'ready' && { text: t('Try a toast'), onClick: () => { void toast(t('Hello from {framework}').replace('{framework}', FRAMEWORK)).catch(error => { setFailed(true); setResult(errorMessage(error)); }); } });
   async function run(action: DemoAction) {
     if (busy) return;
     setBusy(action.id); setFailed(false);

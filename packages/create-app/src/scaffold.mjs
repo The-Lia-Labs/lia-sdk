@@ -9,9 +9,11 @@ const json = value => JSON.stringify(value, null, 2) + '\n';
 export const validAppId = value => typeof value === 'string' && /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])$/.test(value);
 export const validName = value => typeof value === 'string' && /^[a-z0-9][a-z0-9._-]{0,79}$/.test(value) && value !== 'node_modules';
 
-export async function projectFiles({ name, appId, framework, template = 'starter', mock = true }) {
+export async function projectFiles({ name, appId, displayName, framework, template = 'starter', mock = true }) {
   if (!validName(name)) throw Error('Use a lowercase project name with letters, numbers, dots, dashes or underscores.');
   if (!validAppId(appId)) throw Error('App ID must be 2–40 lowercase letters, numbers or dashes, starting and ending with a letter or number.');
+  const appName = displayName === undefined ? appId.replaceAll('-', ' ') : typeof displayName === 'string' ? displayName.trim() : '';
+  if (!appName || appName.length > 40 || /[\x00-\x1f\x7f]/.test(appName)) throw Error('Use an app name of 1–40 characters on one line.');
   const spec = frameworks[framework];
   if (!spec || !templates.includes(template)) throw Error('Choose a supported framework and starter or demo template.');
   const angular = framework === 'angular', bridge = framework === 'bridge';
@@ -23,21 +25,26 @@ export async function projectFiles({ name, appId, framework, template = 'starter
     'package.json': json({ name, version: '0.0.0', private: true, type: 'module', scripts, dependencies, devDependencies, engines: { node: '^20.19.0 || >=22.12.0' } }),
     '.gitignore': 'node_modules\ndist\n.angular\n.env\n.env.*\n!.env.example\n*.local\n',
     '.env.example': '# Public configuration only. Never place server keys in VITE_* variables.\nVITE_LIA_MOCK=true\n',
-    'lia.config.json': json({ appId, framework, template, sdkVersion: SDK_VERSION, mockDevelopment: mock }),
-    'src/styles.css': await text('common/styles.css'),
-    'src/config.ts': `export const APP_ID = ${JSON.stringify(appId)};\nexport const FRAMEWORK = ${JSON.stringify(spec.label)};\nexport const SDK_PACKAGE = ${JSON.stringify(spec.binding)};\nexport const PRODUCT_ID = 'demo-coins'; // Create this test product in the developer portal first.\n`,
-    'src/format.ts': await text('common/format.ts'),
-    'src/demo.ts': await text(bridge ? 'bridge/demo.ts' : template === 'demo' ? 'common/demo.ts' : 'common/minimal.ts'),
+    'lia.config.json': json({ appId, name: appName, framework, template, sdkVersion: SDK_VERSION, mockDevelopment: mock }),
+    'src/i18n.ts': await text(template === 'starter' ? 'common/i18n-starter.ts' : 'common/i18n.ts'),
+    'src/styles.css': await text(template === 'starter' ? 'starter/styles.css' : 'common/styles.css'),
+    'src/config.ts': `export const APP_ID = ${JSON.stringify(appId)};\nexport const APP_NAME = ${JSON.stringify(appName)};\n` + (template === 'demo' ? `export const FRAMEWORK = ${JSON.stringify(spec.label)};\nexport const SDK_PACKAGE = ${JSON.stringify(spec.binding)};\nexport const PRODUCT_ID = 'demo-coins'; // Create this test product in the developer portal first.\n` : ''),
+    ...(template === 'demo' ? { 'src/format.ts': await text('common/format.ts'), 'src/demo.ts': await text(bridge ? 'bridge/demo.ts' : 'common/demo.ts') } : { 'src/starter.ts': (await text('starter/starter.ts')).replace("import { isLia, openLink }", bridge ? "import { isLia, request }" : "import { isLia, openLink }").replace("openLink(GUIDE_URL, { external: true })", bridge ? "request('openLink', { url: GUIDE_URL, external: true })" : "openLink(GUIDE_URL, { external: true })") }),
     'tsconfig.json': json({ compilerOptions: { target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', lib: ['ES2022','DOM','DOM.Iterable'], strict: true, skipLibCheck: true, ...(angular ? {} : { noEmit: true, allowImportingTsExtensions: true }), isolatedModules: true, ...(angular ? { experimentalDecorators: true, useDefineForClassFields: false } : { types: ['vite/client'] }), ...(spec.jsx ? { jsx: spec.jsx } : {}), ...(spec.jsxImportSource ? { jsxImportSource: spec.jsxImportSource } : {}) }, ...(angular ? { files: ['src/main.ts'], include: ['src/**/*.d.ts'], angularCompilerOptions: { strictTemplates: true } } : { include: ['src/**/*.ts','src/**/*.tsx','src/**/*.vue','src/**/*.svelte'] }) }),
   };
   const replacements = { '__APP_NAME__': name, '__FRAMEWORK__': spec.label, '__BINDING__': spec.binding, '__MOCK__': mock ? 'true' : 'false' };
   const render = source => Object.entries(replacements).reduce((result, [key, value]) => result.replaceAll(key, value), source);
-  files['index.html'] = render(await text(angular ? 'angular/index.html' : 'common/index.html')).replace('__ENTRY__', spec.entry);
-  files['README.md'] = render(await text('common/README.md')).replaceAll('__APP_ID__', appId).replaceAll('__TEMPLATE__', template);
+  const htmlName = appName.replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+  files['index.html'] = render((await text(angular ? 'angular/index.html' : 'common/index.html')).replaceAll('__APP_NAME__', htmlName)).replace('__ENTRY__', spec.entry);
+  files['README.md'] = render(await text(template === 'starter' ? 'starter/README.md' : 'common/README.md')).replaceAll('__APP_ID__', appId).replaceAll('__TEMPLATE__', template);
   const folder = framework === 'vanilla' || framework === 'elements' ? 'vanilla' : framework;
   for (const file of await readdir(path.join(templateRoot, folder))) {
     if (['demo.ts','index.html'].includes(file)) continue;
     files['src/' + file] = render(await text(folder + '/' + file));
+  }
+  if (template === 'starter') {
+    const starterFolder = path.join(templateRoot, 'starter', folder);
+    for (const file of await readdir(starterFolder)) files['src/' + file] = render(await text('starter/' + folder + '/' + file));
   }
   if (angular) {
     files['angular.json'] = json({ $schema: './node_modules/@angular/cli/lib/config/schema.json', version: 1, cli: { analytics: false }, projects: { app: { projectType: 'application', root: '', sourceRoot: 'src', architect: { build: { builder: '@angular/build:application', options: { browser: 'src/main.ts', index: 'index.html', outputPath: 'dist', tsConfig: 'tsconfig.json', styles: ['src/styles.css'], polyfills: ['zone.js'] }, configurations: { production: { fileReplacements: [{ replace: 'src/local-dev.ts', with: 'src/local-dev.production.ts' }] }, development: { optimization: false, sourceMap: true } }, defaultConfiguration: 'production' }, serve: { builder: '@angular/build:dev-server', configurations: { development: { buildTarget: 'app:build:development' } }, defaultConfiguration: 'development' } } } } });
@@ -46,9 +53,10 @@ export async function projectFiles({ name, appId, framework, template = 'starter
     files['src/lia.ts'] = bridge ? `export * from '@lia-labs/bridge';\n` : `export * from '${framework === 'elements' ? '@lia-labs/sdk' : spec.binding}';\n`;
     files['src/local-dev.ts'] = render(await text(bridge ? 'bridge/local-dev.ts' : 'common/local-dev.ts'));
   }
-  if (framework === 'elements') {
+  if (framework === 'elements' && template === 'demo') {
     files['src/main.ts'] = `import './local-dev';\nimport { defineLiaElements } from '@lia-labs/elements';\nimport { mount } from './app';\nimport './styles.css';\ndefineLiaElements();\nconst host = document.createElement('lia-app');\nhost.setAttribute('auto-ready', '');\nconst button = document.createElement('lia-main-button');\nbutton.setAttribute('text', 'Try a toast');\nbutton.addEventListener('lia-click', () => import('./lia').then(sdk => sdk.toast('Hello from web components')).catch(console.error));\ndocument.body.append(host, button);\nconst dispose = mount({ nativeButton: false });\nimport.meta.hot?.dispose(() => { dispose(); host.remove(); button.remove(); });\n`;
   }
+  if (framework === 'elements' && template === 'starter') files['src/main.ts'] = `import './local-dev';\nimport { defineLiaElements } from '@lia-labs/elements';\nimport { mount } from './app';\nimport './styles.css';\ndefineLiaElements();\nconst dispose = mount();\nimport.meta.hot?.dispose(dispose);\n`;
   if (framework === 'svelte') files['src/vite-env.d.ts'] = '/// <reference types="svelte" />\n/// <reference types="vite/client" />\n';
   return files;
 }

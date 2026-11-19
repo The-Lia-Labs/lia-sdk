@@ -9,6 +9,7 @@ const root=document.getElementById('app')!;
 root.innerHTML='<div class="loading"><h1>Connecting to Lia…</h1></div>';
 let selected=groups[0].id,busy=false;
 const cleanups:(()=>void)[]=[];
+cleanups.push(on('languageChanged', data => { document.documentElement.lang = data.language; document.documentElement.dir = data.rtl ? 'rtl' : 'ltr'; }));
 function theme(values:ThemeParams){for(const[key,value]of Object.entries(values))if(typeof value==='string')document.documentElement.style.setProperty('--lia-'+key.replaceAll('_','-'),value);}
 void request('init').then(me=>{
   theme(me.themeParams);document.documentElement.lang=me.language;document.documentElement.dir=me.rtl?'rtl':'ltr';

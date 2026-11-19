@@ -105,10 +105,11 @@ export async function registerProject({directory='.',origin=DEFAULT_API,id,name,
   if(!account)throw new LiaAPIError(401,'unauthorized');
   const appId=id||config.appId;
   if(typeof appId!=='string'||!/^[a-z0-9][a-z0-9-]{0,38}[a-z0-9]$/.test(appId))throw Error('Choose a valid --app-id (2–40 lowercase letters, numbers or dashes).');
-  const result=await cliRequest(origin,'/apps',{method:'POST',token:account.token,signal,body:{id:appId,name:name||appId.replaceAll('-',' '),kind,...(url?{url}:{})}});
+  const appName=name||config.name||appId.replaceAll('-',' ');
+  const result=await cliRequest(origin,'/apps',{method:'POST',token:account.token,signal,body:{id:appId,name:appName,kind,...(url?{url}:{})}});
   const dashboard=result.dashboardUrl||new URL('/apps/'+encodeURIComponent(appId),new URL(origin).hostname==='api.lialabs.org'?'https://developers.lialabs.org':origin).toString();
-  const next={...config,appId,registration:{id:appId,apiOrigin:apiOrigin(origin),dashboardUrl:dashboard,publicHost:result.app?.publicHost||result.app?.public_host||null}};
+  const next={...config,appId,name:result.app?.name||appName,registration:{id:appId,apiOrigin:apiOrigin(origin),dashboardUrl:dashboard,publicHost:result.app?.publicHost||result.app?.public_host||null}};
   await writeFile(filename,JSON.stringify(next,null,2)+'\n');
-  if(config.appId!==appId){const file=path.resolve(directory,'src/config.ts');const prior=await readFile(file,'utf8').catch(()=>null);if(prior)await writeFile(file,prior.replace('export const APP_ID = '+JSON.stringify(config.appId)+';','export const APP_ID = '+JSON.stringify(appId)+';'));}
+  if(config.appId!==appId||config.name!==next.name){const file=path.resolve(directory,'src/config.ts');const prior=await readFile(file,'utf8').catch(()=>null);if(prior)await writeFile(file,prior.replace('export const APP_ID = '+JSON.stringify(config.appId)+';','export const APP_ID = '+JSON.stringify(appId)+';').replace('export const APP_NAME = '+JSON.stringify(config.name)+';','export const APP_NAME = '+JSON.stringify(next.name)+';'));}
   return {...result,dashboardUrl:dashboard,appId,pendingHosting:result.app?.url==='/sdk/cli-setup'};
 }
