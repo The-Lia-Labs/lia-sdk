@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@lia-labs/bridge": [
+        "./packages/bridge/src/index.ts"
+      ],
+      "@lia-labs/sdk": [
+        "./packages/sdk/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "packages/*/src",
+    "packages/*/test"
+  ]
+}

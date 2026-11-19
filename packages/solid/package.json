@@ -1,0 +1,47 @@
+{
+  "name": "@lia-labs/sdk-solid",
+  "version": "0.6.1",
+  "description": "Solid primitives for the Lia SDK.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "lia",
+    "mini-app",
+    "sdk",
+    "web-app"
+  ],
+  "homepage": "https://docs.lialabs.org/packages",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean --sourcemap"
+  },
+  "peerDependencies": {
+    "@lia-labs/sdk": "0.6.1",
+    "solid-js": "^1.8"
+  },
+  "devDependencies": {
+    "@lia-labs/sdk": "0.6.1"
+  },
+  "author": "Lia Labs",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

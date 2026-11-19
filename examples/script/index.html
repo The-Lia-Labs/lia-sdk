@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Lia SDK: script build</title>
+  <!-- Published: https://unpkg.com/@lia-labs/sdk/dist/index.global.js -->
+  <script src="../../packages/sdk/dist/index.global.js"></script>
+  <style>
+    body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: var(--lia-bg-color, #fff); color: var(--lia-text-color, #0b0b0f); }
+    main { padding: 20px 16px calc(20px + var(--lia-safe-area-inset-bottom, 0px)); }
+    .card { background: var(--lia-secondary-bg-color, #f5f5f7); border-radius: 18px; padding: 16px; margin-bottom: 12px; }
+    .hint { color: var(--lia-hint-color, #6b6e7b); font-size: 14px; }
+    button { font: inherit; padding: 10px 16px; border: 0; border-radius: 12px; background: var(--lia-button-color, #2f5bff); color: var(--lia-button-text-color, #fff); }
+    pre { white-space: pre-wrap; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card"><b id="hello">Opening…</b><div class="hint" id="where"></div></div>
+    <div class="card">
+      <button id="buy">Buy extra lives</button>
+      <button id="theme">Switch theme (mock)</button>
+    </div>
+    <pre class="card" id="log"></pre>
+  </main>
+  <script>
+    var lia = window.liaSdk;
+    var log = function (label, value) { document.getElementById('log').textContent = label + (value === undefined ? '' : ' ' + JSON.stringify(value)) + '\n' + document.getElementById('log').textContent; };
+
+    // Outside Lia (this page in a desktop browser), a pretend Lia answers instead.
+    var mock = lia.isLia() ? null : lia.mockLia({ init: { player: { id: 'p_example00000000000000', name: 'amara' } } });
+    document.getElementById('where').textContent = mock ? 'Running outside Lia, on mockLia()' : 'Running inside Lia';
+
+    lia.init().then(function (me) {
+      document.getElementById('hello').textContent = 'Hello, @' + me.player.name + ' (' + me.language + ', ' + me.mode + ')';
+      lia.ready();
+    });
+
+    lia.colorScheme.subscribe(function (scheme) { log('colorScheme', scheme); });
+    lia.mainButton.setParams({ text: 'Main button', isVisible: true });
+    lia.mainButton.onClick(function () { log('main button pressed'); });
+
+    document.getElementById('buy').onclick = function () {
+      lia.pay('extra-lives').then(function (charge) { log('paid', charge); }, function (error) { log('not paid', error.code); });
+    };
+    document.getElementById('theme').onclick = function () {
+      if (!mock) return;
+      var dark = lia.colorScheme.get() === 'light';
+      mock.event('theme', { colorScheme: dark ? 'dark' : 'light', theme: dark ? { bg_color: '#09090B', text_color: '#F5F5F7', secondary_bg_color: '#141417', hint_color: '#9799A6' } : lia.MOCK_INIT.themeParams });
+    };
+  </script>
+</body>
+</html>

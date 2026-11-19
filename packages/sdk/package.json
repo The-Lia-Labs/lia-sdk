@@ -1,0 +1,45 @@
+{
+  "name": "@lia-labs/sdk",
+  "version": "0.6.1",
+  "description": "The Lia SDK, typed and tree-shakeable: players, payments, invites, notifications, ads, buttons, storage, the phone, and its state as observable values.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./global": "./dist/index.global.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "lia",
+    "mini-app",
+    "sdk",
+    "web-app"
+  ],
+  "homepage": "https://docs.lialabs.org/packages",
+  "scripts": {
+    "build": "rm -rf dist && tsup"
+  },
+  "dependencies": {
+    "@lia-labs/bridge": "0.6.1"
+  },
+  "unpkg": "./dist/index.global.js",
+  "author": "Lia Labs",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

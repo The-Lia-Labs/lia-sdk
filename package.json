@@ -1,0 +1,42 @@
+{
+  "name": "lia-sdk",
+  "private": true,
+  "description": "The Lia SDK as npm packages: the bridge, the typed SDK, and bindings for React, Preact, Vue, Svelte, Solid, Angular and web components.",
+  "type": "module",
+  "workspaces": [
+    "packages/bridge",
+    "packages/sdk",
+    "packages/react",
+    "packages/preact",
+    "packages/vue",
+    "packages/svelte",
+    "packages/solid",
+    "packages/angular",
+    "packages/elements",
+    "packages/create-app"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:create-app": "node --test packages/create-app/test/*.test.mjs",
+    "check": "npm run typecheck && npm test && npm run test:create-app && npm run build",
+    "test:starters": "node scripts/starters-matrix.mjs"
+  },
+  "devDependencies": {
+    "@angular/core": "20.1.0",
+    "@types/react": "19.1.8",
+    "jsdom": "26.1.0",
+    "preact": "10.26.9",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "rxjs": "7.8.2",
+    "solid-js": "1.9.7",
+    "svelte": "5.35.2",
+    "tsup": "8.5.0",
+    "typescript": "5.8.3",
+    "vitest": "3.2.4",
+    "vue": "3.5.17",
+    "@types/react-dom": "19.1.6"
+  }
+}
